@@ -1,3 +1,32 @@
+const mysql = require('mysql2');
+
+// Cadena de conexión provista por Railway (Interna o Pública)
+const connectionString = process.env.MYSQL_URL || process.env.MYSQLPRIVATE_URL || process.env.MYSQLPUBLIC_URL;
+
+let db;
+
+if (connectionString) {
+    // Conexión usando la URL unificada
+    db = mysql.createPool(connectionString);
+} else {
+    // Conexión usando variables individuales de respaldo
+    db = mysql.createPool({
+        host: process.env.MYSQLHOST || process.env.MYSQL_HOST,
+        user: process.env.MYSQLUSER || process.env.MYSQL_USER,
+        password: process.env.MYSQLPASSWORD || process.env.MYSQL_PASSWORD,
+        database: process.env.MYSQLDATABASE || process.env.MYSQL_DATABASE || 'railway',
+        port: process.env.MYSQLPORT || process.env.MYSQL_PORT || 3306,
+        waitForConnections: true,
+        connectionLimit: 10,
+        queueLimit: 0
+    });
+}
+
+// Exportar conexión para el resto de la app
+module.exports = db;
+
+
+
 const express = require('express');
 const mysql = require('mysql2');
 const session = express.session ? require('express-session') : require('express-session'); // Mantenido según tu estructura
