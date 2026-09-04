@@ -1,16 +1,13 @@
+const express = require('express');
 const mysql = require('mysql2');
+const app = express();
 
-// Cadena de conexión provista por Railway (Interna o Pública)
+// Configuración del Pool de MySQL
 const connectionString = process.env.MYSQL_URL || process.env.MYSQLPRIVATE_URL || process.env.MYSQLPUBLIC_URL;
 
-let db;
-
-if (connectionString) {
-    // Conexión usando la URL unificada
-    db = mysql.createPool(connectionString);
-} else {
-    // Conexión usando variables individuales de respaldo
-    db = mysql.createPool({
+const db = connectionString ?
+    mysql.createPool(connectionString) :
+    mysql.createPool({
         host: process.env.MYSQLHOST || process.env.MYSQL_HOST,
         user: process.env.MYSQLUSER || process.env.MYSQL_USER,
         password: process.env.MYSQLPASSWORD || process.env.MYSQL_PASSWORD,
@@ -20,15 +17,26 @@ if (connectionString) {
         connectionLimit: 10,
         queueLimit: 0
     });
-}
 
-// Exportar conexión para el resto de la app
-module.exports = db;
+// Verificar conexión sin tumbar el servidor si falla
+db.getConnection((err, connection) => {
+    if (err) {
+        console.error('Error de conexión a la Base de Datos:', err.message);
+    } else {
+        console.log('Conexión exitosa a MySQL en Railway');
+        connection.release();
+    }
+});
+
+// Configuración del Puerto para Railway (Obligatorio 0.0.0.0)
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Servidor activo en el puerto ${PORT}`);
+});
 
 
-
-const express = require('express');
-const mysql = require('mysql2');
+//const express = require('express');
+//const mysql = require('mysql2');
 const session = express.session ? require('express-session') : require('express-session'); // Mantenido según tu estructura
 const path = require('path');
 
@@ -37,9 +45,9 @@ const puppeteer = require('puppeteer');
 //const path = require('path');
 const fs = require('fs');
 
-const app = express();
+//const app = express();
 
-const PORT = process.env.PORT || 3000;
+//const PORT = process.env.PORT || 3000;
 
 // Configuración de Middlewares
 app.use(express.json());
