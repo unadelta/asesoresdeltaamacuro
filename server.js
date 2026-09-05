@@ -763,10 +763,8 @@ app.put('/api/alumnos/:id', async(req, res) => {
 });
 
 */
-
-//ALUMNO INICIA
 // ==========================================
-// RUTAS PARA EL MÓDULO DE ALUMNOS
+// RUTAS PARA EL MÓDULO DE ALUMNOS (CALLBACKS - TABLA: alumno)
 // ==========================================
 
 app.get('/alumno', (req, res) => {
@@ -778,11 +776,12 @@ app.get('/alumno', (req, res) => {
 
 // LISTAR ALUMNOS
 app.get('/api/alumnos', (req, res) => {
+    // Se usa CALLBACK (err, results) porque db es un Pool estándar
     const query = 'SELECT id, cedula, nombre, codigo_carrera, descripcion_carrera FROM alumno ORDER BY cedula ASC';
     db.query(query, (err, results) => {
         if (err) {
             console.error('Error al obtener alumnos:', err);
-            return res.status(500).json({ success: false, message: err.message });
+            return res.status(500).json({ success: false, message: 'Error en el servidor al consultar alumnos.' });
         }
         res.json({ success: true, data: results });
     });
@@ -800,20 +799,21 @@ app.get('/api/alumnos/buscar/:cedula', (req, res) => {
     db.query(query, [cedulaBusqueda], (err, results) => {
         if (err) {
             console.error('Error al buscar alumno por cédula:', err);
-            return res.status(500).json({ success: false, message: err.message });
+            return res.status(500).json({ success: false, message: 'Error en el servidor.' });
         }
         if (results.length > 0) {
             res.json({ success: true, data: results[0] });
         } else {
-            res.json({ success: false, data: null });
+            res.json({ success: false, data: null, message: 'Alumno no encontrado.' });
         }
     });
 });
 
-// REGISTRAR ALUMNO (POST)
+// REGISTRAR NUEVO ALUMNO (POST)
 app.post('/api/alumnos', (req, res) => {
     const { cedula, nombre, codigo_carrera, descripcion_carrera } = req.body;
 
+    // 1. Validar campos obligatorios
     if (!cedula || !cedula.trim() || !nombre || !nombre.trim() || !codigo_carrera || !codigo_carrera.trim()) {
         return res.status(400).json({
             success: false,
@@ -823,7 +823,7 @@ app.post('/api/alumnos', (req, res) => {
 
     const cedulaLimpia = cedula.trim();
 
-    // 1. Verificar si la cédula ya existe en la tabla alumno
+    // 2. Verificar duplicado (Callback)
     db.query('SELECT id FROM alumno WHERE cedula = ?', [cedulaLimpia], (err, existente) => {
         if (err) {
             console.error('Error al verificar duplicado:', err);
@@ -837,12 +837,12 @@ app.post('/api/alumnos', (req, res) => {
             });
         }
 
-        // 2. Insertar el nuevo alumno
+        // 3. Insertar (Callback) - Tabla: alumno
         const sqlInsert = 'INSERT INTO alumno (cedula, nombre, codigo_carrera, descripcion_carrera) VALUES (?, ?, ?, ?)';
         db.query(sqlInsert, [cedulaLimpia, nombre.trim(), codigo_carrera.trim(), (descripcion_carrera || '').trim()], (err, result) => {
             if (err) {
-                console.error('Error en POST /api/alumnos:', err);
-                return res.status(500).json({ success: false, message: 'Error al registrar el alumno.' });
+                console.error('Error al insertar alumno:', err);
+                return res.status(500).json({ success: false, message: 'Error al registrar el alumno en la base de datos.' });
             }
 
             res.json({
@@ -854,11 +854,12 @@ app.post('/api/alumnos', (req, res) => {
     });
 });
 
-// ACTUALIZAR ALUMNO (PUT)
+// ACTUALIZAR ALUMNO EXISTENTE (PUT)
 app.put('/api/alumnos/:id', (req, res) => {
     const { id } = req.params;
     const { cedula, nombre, codigo_carrera, descripcion_carrera } = req.body;
 
+    // 1. Validar campos
     if (!cedula || !cedula.trim() || !nombre || !nombre.trim() || !codigo_carrera || !codigo_carrera.trim()) {
         return res.status(400).json({
             success: false,
@@ -868,10 +869,10 @@ app.put('/api/alumnos/:id', (req, res) => {
 
     const cedulaLimpia = cedula.trim();
 
-    // 1. Verificar que la cédula no pertenezca a otro alumno
+    // 2. Verificar que la cédula no pertenezca a OTRO alumno (Callback)
     db.query('SELECT id FROM alumno WHERE cedula = ? AND id != ?', [cedulaLimpia, id], (err, existente) => {
         if (err) {
-            console.error('Error al verificar duplicado:', err);
+            console.error('Error al verificar duplicado en UPDATE:', err);
             return res.status(500).json({ success: false, message: 'Error interno del servidor.' });
         }
 
@@ -882,12 +883,16 @@ app.put('/api/alumnos/:id', (req, res) => {
             });
         }
 
-        // 2. Actualizar registro
+        // 3. Actualizar (Callback) - Tabla: alumno
         const sqlUpdate = 'UPDATE alumno SET cedula = ?, nombre = ?, codigo_carrera = ?, descripcion_carrera = ? WHERE id = ?';
         db.query(sqlUpdate, [cedulaLimpia, nombre.trim(), codigo_carrera.trim(), (descripcion_carrera || '').trim(), id], (err, result) => {
             if (err) {
-                console.error('Error en PUT /api/alumnos:', err);
-                return res.status(500).json({ success: false, message: 'Error al actualizar el alumno.' });
+                console.error('Error al actualizar alumno:', err);
+                return res.status(500).json({ success: false, message: 'Error al actualizar los datos en la base de datos.' });
+            }
+
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ success: false, message: 'Alumno no encontrado.' });
             }
 
             res.json({
@@ -901,19 +906,34 @@ app.put('/api/alumnos/:id', (req, res) => {
 // ELIMINAR ALUMNO (DELETE)
 app.delete('/api/alumnos/:id', (req, res) => {
     const { id } = req.params;
+    // Se usa CALLBACK. Tabla: alumno
     const query = 'DELETE FROM alumno WHERE id = ?';
 
     db.query(query, [id], (err, result) => {
         if (err) {
             console.error('Error al eliminar alumno:', err);
-            return res.status(500).json({ success: false, message: err.message });
+            // IMPORTANTE: Si la cédula está referenciada en control_asesoria o control_correcciones,
+            // saltará un error de clave foránea aquí.
+            if (err.code === 'ER_ROW_IS_REFERENCED_2') {
+                return res.status(400).json({
+                    success: false,
+                    message: 'No se puede eliminar el alumno porque tiene asesorías o correcciones registradas.'
+                });
+            }
+            return res.status(500).json({ success: false, message: 'Error interno al intentar eliminar.' });
         }
+
         if (result.affectedRows === 0) {
             return res.status(404).json({ success: false, message: 'Alumno no encontrado.' });
         }
+
         res.json({ success: true, message: 'Alumno eliminado correctamente.' });
     });
 });
+
+// ==========================================
+// FIN RUTAS ALUMNOS
+// ==========================================
 //ALUMNO FIN 
 // ==========================================
 // API DE TAREAS
