@@ -21,6 +21,20 @@ const db = connectionString ?
 
 
 
+// Verificar la conexión al Pool sin tumbar el servidor si falla
+db.getConnection((err, connection) => {
+    if (err) {
+        console.error('❌ Error crítico al obtener conexión del Pool MySQL:', err.message);
+        console.error('Detalles:', err);
+        // No hacemos process.exit() para permitir que Railway intente reconectar
+    } else {
+        console.log('✅ Conexión exitosa a la base de datos MySQL (Pool activo) en Railway.');
+        connection.release(); // Importante: devolver la conexión al pool
+    }
+});
+
+
+
 //const express = require('express');
 //const mysql = require('mysql2');
 const session = express.session ? require('express-session') : require('express-session'); // Mantenido según tu estructura
@@ -50,23 +64,7 @@ app.use(session({
         maxAge: 24 * 60 * 60 * 1000 // 1 día
     }
 }));
-/*
-// Conexión a la Base de Datos MySQL
-const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'asesores'
-});
-*/
 
-db.connect((err) => {
-    if (err) {
-        console.error('❌ Error al conectar a la base de datos MySQL:', err.message);
-        return;
-    }
-    console.log('✅ Conectado exitosamente a la base de datos MySQL (asesores).');
-});
 
 // ==========================================
 // RUTAS Y ENDPOINTS DE AUTENTICACIÓN
@@ -1890,7 +1888,10 @@ app.get('/api/reporte_actividades', (req, res) => {
     });
 });
 
-// Iniciar Servidor
-app.listen(PORT, () => {
-    console.log(`🚀 Servidor ejecutándose en http://localhost:${PORT}`);
+// Asegurar que la variable PORT esté declarada antes del listen
+const PORT = process.env.PORT || 3000;
+// ===================================================
+// === ESTO DEBE IR AL FINAL DE TU SERVER.JS ===
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Servidor ejecutándose en el puerto ${PORT}`);
 });
