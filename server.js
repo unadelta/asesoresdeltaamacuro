@@ -18,21 +18,7 @@ const db = connectionString ?
         queueLimit: 0
     });
 
-// Verificar conexión sin tumbar el servidor si falla
-db.getConnection((err, connection) => {
-    if (err) {
-        console.error('Error de conexión a la Base de Datos:', err.message);
-    } else {
-        console.log('Conexión exitosa a MySQL en Railway');
-        connection.release();
-    }
-});
 
-// Configuración del Puerto para Railway (Obligatorio 0.0.0.0)
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Servidor activo en el puerto ${PORT}`);
-});
 
 
 //const express = require('express');
@@ -45,9 +31,7 @@ const puppeteer = require('puppeteer');
 //const path = require('path');
 const fs = require('fs');
 
-//const app = express();
 
-//const PORT = process.env.PORT || 3000;
 
 // Configuración de Middlewares
 app.use(express.json());
@@ -66,7 +50,7 @@ app.use(session({
         maxAge: 24 * 60 * 60 * 1000 // 1 día
     }
 }));
-
+/*
 // Conexión a la Base de Datos MySQL
 const db = mysql.createConnection({
     host: 'localhost',
@@ -74,6 +58,7 @@ const db = mysql.createConnection({
     password: '',
     database: 'asesores'
 });
+*/
 
 db.connect((err) => {
     if (err) {
