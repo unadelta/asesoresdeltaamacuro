@@ -149,6 +149,45 @@
                 console.error("Error al cargar carreras:", error);
             }
         }
+        /*
+                async function cargarAlumnos() {
+                    try {
+                        const res = await fetch('/api/alumnos');
+                        const data = await res.json();
+                        const tbody = document.getElementById('tablaAlumnos');
+                        tbody.innerHTML = '';
+
+                        const lista = data.success ? data.data : data;
+                        listaAlumnosGlobal = Array.isArray(lista) ? lista : [];
+
+                        if (listaAlumnosGlobal.length > 0) {
+                            listaAlumnosGlobal.forEach(a => {
+                                const descripcionCarrera = a.descripcion_carrera || 'N/A';
+                                tbody.innerHTML += `
+                                    <tr>
+                                        <td>${a.id}</td>
+                                        <td>${a.cedula}</td>
+                                        <td>${a.nombre}</td>
+                                        <td><span class="badge bg-secondary">${a.codigo_carrera}</span></td>
+                                        <td>${descripcionCarrera}</td>
+                                        <td class="text-center">
+                                            <button class="btn btn-sm btn-warning me-1" onclick="editarAlumno(${a.id})" title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" onclick="eliminarAlumno(${a.id})" title="Eliminar">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>`;
+                            });
+                        } else {
+                            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4">No hay alumnos registrados.</td></tr>`;
+                        }
+                    } catch (error) {
+                        console.error("Error al cargar alumnos:", error);
+                    }
+                }
+        */
 
         async function cargarAlumnos() {
             try {
@@ -163,22 +202,25 @@
                 if (listaAlumnosGlobal.length > 0) {
                     listaAlumnosGlobal.forEach(a => {
                         const descripcionCarrera = a.descripcion_carrera || 'N/A';
+                        // Escapamos apóstrofes simples en el nombre del alumno para evitar errores de sintaxis
+                        const nombreEscape = (a.nombre || '').replace(/'/g, "\\'");
+
                         tbody.innerHTML += `
-                            <tr>
-                                <td>${a.id}</td>
-                                <td>${a.cedula}</td>
-                                <td>${a.nombre}</td>
-                                <td><span class="badge bg-secondary">${a.codigo_carrera}</span></td>
-                                <td>${descripcionCarrera}</td>
-                                <td class="text-center">
-                                    <button class="btn btn-sm btn-warning me-1" onclick="editarAlumno(${a.id})" title="Editar">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-danger" onclick="eliminarAlumno(${a.id})" title="Eliminar">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>`;
+                    <tr>
+                        <td>${a.id}</td>
+                        <td>${a.cedula}</td>
+                        <td>${a.nombre}</td>
+                        <td><span class="badge bg-secondary">${a.codigo_carrera}</span></td>
+                        <td>${descripcionCarrera}</td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-warning me-1" onclick="editarAlumno(${a.id})" title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="confirmarEliminacion(${a.id}, '${nombreEscape}')" title="Eliminar">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>`;
                     });
                 } else {
                     tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4">No hay alumnos registrados.</td></tr>`;

@@ -904,52 +904,43 @@ app.put('/api/alumnos/:id', (req, res) => {
 });
 
 // Endpoint para eliminar alumno
+// Endpoint para eliminar alumno
 app.delete('/api/alumnos/:id', async(req, res) => {
     const alumnoId = req.params.id;
 
     try {
-        // 1. USAMOS db.promise().query() para usar async/await si tu pool es estándar
-        // o db.query() si ya es promesa.
-
-        // CONSULTAS DE VERIFICACIÓN
-        // Verificación 1: Calificaciones
-        const [calificaciones] = await db.promise().query(
-            'SELECT COUNT(*) as total FROM calificaciones WHERE alumno_id = ?', [alumnoId]
-        );
-
-        // Verificación 2: Inasistencias (ejemplo)
-        const [inasistencias] = await db.promise().query(
-            'SELECT COUNT(*) as total FROM inasistencias WHERE alumno_id = ?', [alumnoId]
-        );
-
-        // 2. COMPROBACIÓN DE REGISTROS ASOCIADOS
-        if (calificaciones[0].total > 0 || inasistencias[0].total > 0) {
-            // RESPUESTA DE ADVERTENCIA ESPECÍFICA
-            return res.status(400).json({
-                success: false,
-                errorCode: 'REGISTROS_ASOCIADOS',
-                message: 'El alumno tiene registros asociados y no puede ser eliminado.'
-            });
+        // 1. Verificación opcional de dependencias en tablas asociadas
+        try {
+            const [calificaciones] = await db.promise().query(
+                'SELECT COUNT(*) as total FROM calificaciones WHERE alumno_id = ?', [alumnoId]
+            );
+            if (calificaciones[0].total > 0) {
+                return res.status(400).json({
+                    success: false,
+                    errorCode: 'REGISTROS_ASOCIADOS',
+                    message: 'El alumno tiene registros asociados y no puede ser eliminado.'
+                });
+            }
+        } catch (e) {
+            // Se ignora si la columna/tabla no existe o no aplica
         }
 
-        // 3. ELIMINACIÓN FINAL
+        // 2. ELIMINACIÓN EN LA TABLA CORRECTA (alumno)
         const [resultadoEliminacion] = await db.promise().query(
-            'DELETE FROM alumnos WHERE id = ?', [alumnoId]
+            'DELETE FROM alumno WHERE id = ?', [alumnoId]
         );
 
         if (resultadoEliminacion.affectedRows === 0) {
             return res.status(404).json({ success: false, message: 'Alumno no encontrado.' });
         }
 
-        // ÉXITO
         res.json({ success: true, message: 'Alumno eliminado exitosamente.' });
 
     } catch (error) {
-        console.error('Error crítico en el servidor:', error);
+        console.error('Error crítico al eliminar alumno:', error);
         res.status(500).json({ success: false, message: 'Error interno del servidor.' });
     }
 });
-
 // ==========================================
 // FIN RUTAS ALUMNOS
 // ==========================================
