@@ -507,6 +507,7 @@ app.post('/api/alumnos', (req, res) => {
     });
 });
 */
+/*
 app.put('/api/alumnos/:id', (req, res) => {
     const { id } = req.params;
     const { cedula, nombre, codigo_carrera } = req.body;
@@ -526,12 +527,13 @@ app.put('/api/alumnos/:id', (req, res) => {
         res.json({ success: true, message: 'Alumno actualizado correctamente' });
     });
 });
-
-/***********************************alumno */
+*/
+//***********************************alumno
 
 // ==========================================
 // REGISTRAR NUEVO ALUMNO (POST)
 // ==========================================
+/*
 app.post('/api/alumnos', async(req, res) => {
     try {
         const { cedula, nombre, codigo_carrera, descripcion_carrera } = req.body;
@@ -583,10 +585,11 @@ app.post('/api/alumnos', async(req, res) => {
         });
     }
 });
-
+*/
 // ==========================================
 // ACTUALIZAR ALUMNO EXISTENTE (PUT)
 // ==========================================
+/*
 app.put('/api/alumnos/:id', async(req, res) => {
     try {
         const { id } = req.params;
@@ -641,8 +644,9 @@ app.put('/api/alumnos/:id', async(req, res) => {
 });
 
 
-
-/***********************Alumno */
+*
+/
+//***********************Alumno 
 app.delete('/api/alumnos/:id', (req, res) => {
     const { id } = req.params;
     const query = 'DELETE FROM alumno WHERE id = ?';
@@ -659,6 +663,258 @@ app.delete('/api/alumnos/:id', (req, res) => {
     });
 });
 
+
+// ==========================================
+// REGISTRAR NUEVO ALUMNO (POST)
+// ==========================================
+app.post('/api/alumnos', async(req, res) => {
+    try {
+        const { cedula, nombre, codigo_carrera, descripcion_carrera } = req.body;
+
+        // 1. Validar que los campos no vengan vacíos
+        if (!cedula || !cedula.trim() ||
+            !nombre || !nombre.trim() ||
+            !codigo_carrera || !codigo_carrera.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: 'Todos los campos son obligatorios.'
+            });
+        }
+
+        const cedulaLimpia = cedula.trim();
+
+        // 2. Comprobar si la cédula ya existe en la base de datos
+        const [existente] = await db.query(
+            'SELECT id FROM alumnos WHERE cedula = ?', [cedulaLimpia]
+        );
+
+        if (existente && existente.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: `La cédula ${cedulaLimpia} ya se encuentra registrada.`
+            });
+        }
+
+        // 3. Insertar el nuevo registro en la tabla alumnos
+        const [result] = await db.query(
+            'INSERT INTO alumnos (cedula, nombre, codigo_carrera, descripcion_carrera) VALUES (?, ?, ?, ?)', [cedulaLimpia, nombre.trim(), codigo_carrera.trim(), (descripcion_carrera || '').trim()]
+        );
+
+        return res.json({
+            success: true,
+            id: result.insertId,
+            message: 'Alumno registrado con éxito.'
+        });
+
+    } catch (error) {
+        console.error('Error en POST /api/alumnos:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor al guardar el alumno.'
+        });
+    }
+});
+
+// ==========================================
+// ACTUALIZAR ALUMNO (PUT)
+// ==========================================
+app.put('/api/alumnos/:id', async(req, res) => {
+    try {
+        const { id } = req.params;
+        const { cedula, nombre, codigo_carrera, descripcion_carrera } = req.body;
+
+        if (!cedula || !cedula.trim() || !nombre || !nombre.trim() || !codigo_carrera || !codigo_carrera.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: 'Todos los campos son obligatorios.'
+            });
+        }
+
+        const cedulaLimpia = cedula.trim();
+
+        // Comprobar que la cédula no le pertenezca a OTRO alumno
+        const [existente] = await db.query(
+            'SELECT id FROM alumnos WHERE cedula = ? AND id != ?', [cedulaLimpia, id]
+        );
+
+        if (existente && existente.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: `La cédula ${cedulaLimpia} pertenece a otro alumno.`
+            });
+        }
+
+        await db.query(
+            'UPDATE alumnos SET cedula = ?, nombre = ?, codigo_carrera = ?, descripcion_carrera = ? WHERE id = ?', [cedulaLimpia, nombre.trim(), codigo_carrera.trim(), (descripcion_carrera || '').trim(), id]
+        );
+
+        return res.json({
+            success: true,
+            message: 'Alumno actualizado correctamente.'
+        });
+
+    } catch (error) {
+        console.error('Error en PUT /api/alumnos:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor al actualizar el alumno.'
+        });
+    }
+});
+
+*/
+
+//ALUMNO INICIA
+// ==========================================
+// RUTAS PARA EL MÓDULO DE ALUMNOS
+// ==========================================
+
+app.get('/alumno', (req, res) => {
+    if (!req.session || !req.session.usuario) {
+        return res.redirect('/');
+    }
+    res.sendFile(path.join(__dirname, 'views', 'alumno.html'));
+});
+
+// LISTAR ALUMNOS
+app.get('/api/alumnos', (req, res) => {
+    const query = 'SELECT id, cedula, nombre, codigo_carrera, descripcion_carrera FROM alumno ORDER BY cedula ASC';
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error('Error al obtener alumnos:', err);
+            return res.status(500).json({ success: false, message: err.message });
+        }
+        res.json({ success: true, data: results });
+    });
+});
+
+// BUSCAR ALUMNO POR CÉDULA
+app.get('/api/alumnos/buscar/:cedula', (req, res) => {
+    const cedulaBusqueda = decodeURIComponent(req.params.cedula);
+    const query = `
+        SELECT a.id, a.cedula, a.nombre, a.codigo_carrera, c.nombre_carrera AS descripcion_carrera
+        FROM alumno a
+        LEFT JOIN carrera c ON a.codigo_carrera = c.codigo
+        WHERE a.cedula = ?
+    `;
+    db.query(query, [cedulaBusqueda], (err, results) => {
+        if (err) {
+            console.error('Error al buscar alumno por cédula:', err);
+            return res.status(500).json({ success: false, message: err.message });
+        }
+        if (results.length > 0) {
+            res.json({ success: true, data: results[0] });
+        } else {
+            res.json({ success: false, data: null });
+        }
+    });
+});
+
+// REGISTRAR ALUMNO (POST)
+app.post('/api/alumnos', (req, res) => {
+    const { cedula, nombre, codigo_carrera, descripcion_carrera } = req.body;
+
+    if (!cedula || !cedula.trim() || !nombre || !nombre.trim() || !codigo_carrera || !codigo_carrera.trim()) {
+        return res.status(400).json({
+            success: false,
+            message: 'Todos los campos son obligatorios.'
+        });
+    }
+
+    const cedulaLimpia = cedula.trim();
+
+    // 1. Verificar si la cédula ya existe en la tabla alumno
+    db.query('SELECT id FROM alumno WHERE cedula = ?', [cedulaLimpia], (err, existente) => {
+        if (err) {
+            console.error('Error al verificar duplicado:', err);
+            return res.status(500).json({ success: false, message: 'Error interno del servidor.' });
+        }
+
+        if (existente.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: `La cédula ${cedulaLimpia} ya se encuentra registrada.`
+            });
+        }
+
+        // 2. Insertar el nuevo alumno
+        const sqlInsert = 'INSERT INTO alumno (cedula, nombre, codigo_carrera, descripcion_carrera) VALUES (?, ?, ?, ?)';
+        db.query(sqlInsert, [cedulaLimpia, nombre.trim(), codigo_carrera.trim(), (descripcion_carrera || '').trim()], (err, result) => {
+            if (err) {
+                console.error('Error en POST /api/alumnos:', err);
+                return res.status(500).json({ success: false, message: 'Error al registrar el alumno.' });
+            }
+
+            res.json({
+                success: true,
+                id: result.insertId,
+                message: 'Alumno registrado con éxito.'
+            });
+        });
+    });
+});
+
+// ACTUALIZAR ALUMNO (PUT)
+app.put('/api/alumnos/:id', (req, res) => {
+    const { id } = req.params;
+    const { cedula, nombre, codigo_carrera, descripcion_carrera } = req.body;
+
+    if (!cedula || !cedula.trim() || !nombre || !nombre.trim() || !codigo_carrera || !codigo_carrera.trim()) {
+        return res.status(400).json({
+            success: false,
+            message: 'Todos los campos son obligatorios.'
+        });
+    }
+
+    const cedulaLimpia = cedula.trim();
+
+    // 1. Verificar que la cédula no pertenezca a otro alumno
+    db.query('SELECT id FROM alumno WHERE cedula = ? AND id != ?', [cedulaLimpia, id], (err, existente) => {
+        if (err) {
+            console.error('Error al verificar duplicado:', err);
+            return res.status(500).json({ success: false, message: 'Error interno del servidor.' });
+        }
+
+        if (existente.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: `La cédula ${cedulaLimpia} pertenece a otro alumno.`
+            });
+        }
+
+        // 2. Actualizar registro
+        const sqlUpdate = 'UPDATE alumno SET cedula = ?, nombre = ?, codigo_carrera = ?, descripcion_carrera = ? WHERE id = ?';
+        db.query(sqlUpdate, [cedulaLimpia, nombre.trim(), codigo_carrera.trim(), (descripcion_carrera || '').trim(), id], (err, result) => {
+            if (err) {
+                console.error('Error en PUT /api/alumnos:', err);
+                return res.status(500).json({ success: false, message: 'Error al actualizar el alumno.' });
+            }
+
+            res.json({
+                success: true,
+                message: 'Alumno actualizado correctamente.'
+            });
+        });
+    });
+});
+
+// ELIMINAR ALUMNO (DELETE)
+app.delete('/api/alumnos/:id', (req, res) => {
+    const { id } = req.params;
+    const query = 'DELETE FROM alumno WHERE id = ?';
+
+    db.query(query, [id], (err, result) => {
+        if (err) {
+            console.error('Error al eliminar alumno:', err);
+            return res.status(500).json({ success: false, message: err.message });
+        }
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, message: 'Alumno no encontrado.' });
+        }
+        res.json({ success: true, message: 'Alumno eliminado correctamente.' });
+    });
+});
+//ALUMNO FIN 
 // ==========================================
 // API DE TAREAS
 // ==========================================
