@@ -903,32 +903,51 @@ app.put('/api/alumnos/:id', (req, res) => {
     });
 });
 
-// ELIMINAR ALUMNO (DELETE)
-app.delete('/api/alumnos/:id', (req, res) => {
-    const { id } = req.params;
-    // Se usa CALLBACK. Tabla: alumno
-    const query = 'DELETE FROM alumno WHERE id = ?';
+// Endpoint para eliminar alumno
+app.delete('/api/alumnos/:id', async(req, res) => {
+    const alumnoId = req.params.id;
 
-    db.query(query, [id], (err, result) => {
-        if (err) {
-            console.error('Error al eliminar alumno:', err);
-            // IMPORTANTE: Si la cédula está referenciada en control_asesoria o control_correcciones,
-            // saltará un error de clave foránea aquí.
-            if (err.code === 'ER_ROW_IS_REFERENCED_2') {
-                return res.status(400).json({
-                    success: false,
-                    message: 'No se puede eliminar el alumno porque tiene asesorías o correcciones registradas.'
-                });
-            }
-            return res.status(500).json({ success: false, message: 'Error interno al intentar eliminar.' });
+    try {
+        // 1. USAMOS db.promise().query() para usar async/await si tu pool es estándar
+        // o db.query() si ya es promesa.
+
+        // CONSULTAS DE VERIFICACIÓN
+        // Verificación 1: Calificaciones
+        const [calificaciones] = await db.promise().query(
+            'SELECT COUNT(*) as total FROM calificaciones WHERE alumno_id = ?', [alumnoId]
+        );
+
+        // Verificación 2: Inasistencias (ejemplo)
+        const [inasistencias] = await db.promise().query(
+            'SELECT COUNT(*) as total FROM inasistencias WHERE alumno_id = ?', [alumnoId]
+        );
+
+        // 2. COMPROBACIÓN DE REGISTROS ASOCIADOS
+        if (calificaciones[0].total > 0 || inasistencias[0].total > 0) {
+            // RESPUESTA DE ADVERTENCIA ESPECÍFICA
+            return res.status(400).json({
+                success: false,
+                errorCode: 'REGISTROS_ASOCIADOS',
+                message: 'El alumno tiene registros asociados y no puede ser eliminado.'
+            });
         }
 
-        if (result.affectedRows === 0) {
+        // 3. ELIMINACIÓN FINAL
+        const [resultadoEliminacion] = await db.promise().query(
+            'DELETE FROM alumnos WHERE id = ?', [alumnoId]
+        );
+
+        if (resultadoEliminacion.affectedRows === 0) {
             return res.status(404).json({ success: false, message: 'Alumno no encontrado.' });
         }
 
-        res.json({ success: true, message: 'Alumno eliminado correctamente.' });
-    });
+        // ÉXITO
+        res.json({ success: true, message: 'Alumno eliminado exitosamente.' });
+
+    } catch (error) {
+        console.error('Error crítico en el servidor:', error);
+        res.status(500).json({ success: false, message: 'Error interno del servidor.' });
+    }
 });
 
 // ==========================================

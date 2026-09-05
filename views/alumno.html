@@ -350,6 +350,91 @@
 
         */
 
+        //Inicio
+        // Función que se llama al hacer clic en el ícono de eliminar
+        function confirmarEliminacion(alumnoId, alumnoNombre) {
+            // 1. Advertencia inicial de confirmación
+            Swal.fire({
+                title: `¿Eliminar a ${alumnoNombre}?`,
+                text: "Esta acción no se puede deshacer fácilmente.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, intentar eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                // Si el usuario hace clic en "Sí"
+                if (result.isConfirmed) {
+                    procederALaEliminacion(alumnoId);
+                }
+            });
+        }
+
+        // Función secundaria que habla con el servidor
+        async function procederALaEliminacion(alumnoId) {
+            try {
+                // Mostramos una alerta de "Cargando..."
+                Swal.fire({
+                    title: 'Procesando...',
+                    text: 'Verificando registros asociados.',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // 2. PETICIÓN AL SERVIDOR (Backend)
+                // Reemplaza esta URL por la URL real de tu API para eliminar alumnos
+                const respuesta = await fetch(`/api/alumnos/${alumnoId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                            // Agrega tokens de autenticación aquí si son necesarios
+                    }
+                });
+
+                const datos = await respuesta.json();
+                Swal.close(); // Cerramos la alerta de "Cargando"
+
+                if (datos.success) {
+                    // 4. ÉXITO: El servidor no encontró problemas y eliminó
+                    Swal.fire(
+                        '¡Eliminado!',
+                        'El alumno ha sido eliminado correctamente.',
+                        'success'
+                    ).then(() => {
+                        // Aquí deberías recargar la tabla de alumnos o eliminar la fila del DOM
+                        location.reload(); // Ejemplo simple: recargar la página
+                    });
+                } else {
+                    // 3. ADVERTENCIA DE REGISTROS ASOCIADOS
+                    // El servidor nos dice que no se pudo debido a dependencias
+                    if (datos.errorCode === 'REGISTROS_ASOCIADOS') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'No se puede eliminar',
+                            text: 'Este alumno tiene campos o registros asociados (ej: calificaciones, préstamos, inasistencias). Debes eliminar esos registros primero.',
+                            confirmButtonColor: '#3085d6'
+                        });
+                    } else {
+                        // Otro tipo de error del servidor
+                        Swal.fire('Error', datos.message || 'No se pudo completar la acción.', 'error');
+                    }
+                }
+
+            } catch (error) {
+                Swal.close();
+                console.error("Error en la eliminación:", error);
+                Swal.fire('Error de Conexión', 'No se pudo comunicar con el servidor.', 'error');
+            }
+        }
+
+        //Fin    
+
+
+
+
         async function guardarAlumno(e) {
             e.preventDefault();
 
