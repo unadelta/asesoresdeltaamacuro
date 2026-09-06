@@ -6,9 +6,9 @@ const puppeteer = require('puppeteer');
 const ejs = require('ejs');
 const path = require('path');
 const fs = require('fs');
-const session = express.session ? require('express-session') : require('express-session'); // Mantenido según tu estructura
-const MySQLStore = require('express-mysql-session')(session);
 
+const session = require('express-session');
+const MySQLStore = require('express-mysql-session')(session);
 
 // Configuración del Pool de MySQL
 const connectionString = process.env.MYSQL_URL || process.env.MYSQLPRIVATE_URL || process.env.MYSQLPUBLIC_URL;
@@ -47,7 +47,7 @@ db.getConnection((err, connection) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/views', express.static(path.join(__dirname, 'views')));
+//app.use('/views', express.static(path.join(__dirname, 'views')));
 
 // Configuración de la Sesión
 /*
@@ -531,279 +531,8 @@ app.get('/api/alumnos/buscar/:cedula', (req, res) => {
         }
     });
 });
-/*
-app.post('/api/alumnos', (req, res) => {
-    const { cedula, nombre, codigo_carrera } = req.body;
-    const query = 'INSERT INTO alumno (cedula, nombre, codigo_carrera) VALUES (?, ?, ?)';
-
-    db.query(query, [cedula, nombre, codigo_carrera], (err, result) => {
-        if (err) {
-            console.error("Error al registrar alumno:", err);
-            if (err.code === 'ER_DUP_ENTRY') {
-                return res.status(400).json({ success: false, message: 'La cédula ya se encuentra registrada en el sistema.' });
-            }
-            return res.status(500).json({ success: false, message: err.message });
-        }
-        res.json({ success: true, id: result.insertId, message: 'Alumno registrado correctamente' });
-    });
-});
-*/
-/*
-app.put('/api/alumnos/:id', (req, res) => {
-    const { id } = req.params;
-    const { cedula, nombre, codigo_carrera } = req.body;
-    const query = 'UPDATE alumno SET cedula = ?, nombre = ?, codigo_carrera = ? WHERE id = ?';
-
-    db.query(query, [cedula, nombre, codigo_carrera, id], (err, result) => {
-        if (err) {
-            console.error('Error al actualizar alumno:', err);
-            if (err.code === 'ER_DUP_ENTRY') {
-                return res.status(400).json({ success: false, message: 'La cédula ya pertenece a otro alumno registrado.' });
-            }
-            return res.status(500).json({ success: false, message: err.message });
-        }
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ success: false, message: 'Alumno no encontrado' });
-        }
-        res.json({ success: true, message: 'Alumno actualizado correctamente' });
-    });
-});
-*/
-//***********************************alumno
-
-// ==========================================
-// REGISTRAR NUEVO ALUMNO (POST)
-// ==========================================
-/*
-app.post('/api/alumnos', async(req, res) => {
-    try {
-        const { cedula, nombre, codigo_carrera, descripcion_carrera } = req.body;
-
-        // 1. Validar que no haya campos vacíos
-        if (!cedula || !cedula.trim() ||
-            !nombre || !nombre.trim() ||
-            !codigo_carrera || !codigo_carrera.trim() ||
-            !descripcion_carrera || !descripcion_carrera.trim()) {
-            return res.status(400).json({
-                success: false,
-                message: 'Todos los campos son obligatorios. Verifique que no quede ningún espacio en blanco.'
-            });
-        }
-
-        // Extraer solo la parte numérica de la cédula para comparar (ej: de 'V-12345678' obtiene '12345678')
-        const numCedulaPuro = cedula.replace(/^[VE]-/i, '').trim();
-
-        // 2. Consultar en la base de datos si la cédula ya existe (buscando tanto con formato como solo números)
-        const [existe] = await db.query(
-            `SELECT id, cedula FROM alumnos 
-             WHERE cedula = ? OR REPLACE(REPLACE(cedula, 'V-', ''), 'E-', '') = ?`, [cedula.trim(), numCedulaPuro]
-        );
-
-        if (existe.length > 0) {
-            return res.status(400).json({
-                success: false,
-                message: `La cédula ${cedula} ya se encuentra almacenada en la base de datos.`
-            });
-        }
-
-        // 3. Insertar el nuevo alumno en la tabla 'alumnos'
-        const [result] = await db.query(
-            `INSERT INTO alumnos (cedula, nombre, codigo_carrera, descripcion_carrera) 
-             VALUES (?, ?, ?, ?)`, [cedula.trim(), nombre.trim(), codigo_carrera.trim(), descripcion_carrera.trim()]
-        );
-
-        return res.json({
-            success: true,
-            id: result.insertId,
-            message: 'Alumno registrado con éxito'
-        });
-
-    } catch (error) {
-        console.error('Error al registrar alumno:', error);
-        return res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor al intentar registrar el alumno.'
-        });
-    }
-});
-*/
-// ==========================================
-// ACTUALIZAR ALUMNO EXISTENTE (PUT)
-// ==========================================
-/*
-app.put('/api/alumnos/:id', async(req, res) => {
-    try {
-        const { id } = req.params;
-        const { cedula, nombre, codigo_carrera, descripcion_carrera } = req.body;
-
-        // 1. Validar que no haya campos vacíos
-        if (!cedula || !cedula.trim() ||
-            !nombre || !nombre.trim() ||
-            !codigo_carrera || !codigo_carrera.trim() ||
-            !descripcion_carrera || !descripcion_carrera.trim()) {
-            return res.status(400).json({
-                success: false,
-                message: 'Todos los campos son obligatorios para actualizar el alumno.'
-            });
-        }
-
-        const numCedulaPuro = cedula.replace(/^[VE]-/i, '').trim();
-
-        // 2. Verificar si la cédula pertenece a OTRO alumno (excluyendo el ID actual)
-        const [existe] = await db.query(
-            `SELECT id FROM alumnos 
-             WHERE (cedula = ? OR REPLACE(REPLACE(cedula, 'V-', ''), 'E-', '') = ?) 
-             AND id != ?`, [cedula.trim(), numCedulaPuro, id]
-        );
-
-        if (existe.length > 0) {
-            return res.status(400).json({
-                success: false,
-                message: `La cédula ${cedula} ya pertenece a otro alumno registrado.`
-            });
-        }
-
-        // 3. Actualizar la información del alumno
-        const [result] = await db.query(
-            `UPDATE alumnos 
-             SET cedula = ?, nombre = ?, codigo_carrera = ?, descripcion_carrera = ? 
-             WHERE id = ?`, [cedula.trim(), nombre.trim(), codigo_carrera.trim(), descripcion_carrera.trim(), id]
-        );
-
-        return res.json({
-            success: true,
-            message: 'Alumno actualizado con éxito'
-        });
-
-    } catch (error) {
-        console.error('Error al actualizar alumno:', error);
-        return res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor al actualizar el alumno.'
-        });
-    }
-});
 
 
-*
-/
-//***********************Alumno 
-app.delete('/api/alumnos/:id', (req, res) => {
-    const { id } = req.params;
-    const query = 'DELETE FROM alumno WHERE id = ?';
-
-    db.query(query, [id], (err, result) => {
-        if (err) {
-            console.error('Error al eliminar alumno:', err);
-            return res.status(500).json({ success: false, message: err.message });
-        }
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ success: false, message: 'Alumno no encontrado' });
-        }
-        res.json({ success: true, message: 'Alumno eliminado correctamente' });
-    });
-});
-
-
-// ==========================================
-// REGISTRAR NUEVO ALUMNO (POST)
-// ==========================================
-app.post('/api/alumnos', async(req, res) => {
-    try {
-        const { cedula, nombre, codigo_carrera, descripcion_carrera } = req.body;
-
-        // 1. Validar que los campos no vengan vacíos
-        if (!cedula || !cedula.trim() ||
-            !nombre || !nombre.trim() ||
-            !codigo_carrera || !codigo_carrera.trim()) {
-            return res.status(400).json({
-                success: false,
-                message: 'Todos los campos son obligatorios.'
-            });
-        }
-
-        const cedulaLimpia = cedula.trim();
-
-        // 2. Comprobar si la cédula ya existe en la base de datos
-        const [existente] = await db.query(
-            'SELECT id FROM alumnos WHERE cedula = ?', [cedulaLimpia]
-        );
-
-        if (existente && existente.length > 0) {
-            return res.status(400).json({
-                success: false,
-                message: `La cédula ${cedulaLimpia} ya se encuentra registrada.`
-            });
-        }
-
-        // 3. Insertar el nuevo registro en la tabla alumnos
-        const [result] = await db.query(
-            'INSERT INTO alumnos (cedula, nombre, codigo_carrera, descripcion_carrera) VALUES (?, ?, ?, ?)', [cedulaLimpia, nombre.trim(), codigo_carrera.trim(), (descripcion_carrera || '').trim()]
-        );
-
-        return res.json({
-            success: true,
-            id: result.insertId,
-            message: 'Alumno registrado con éxito.'
-        });
-
-    } catch (error) {
-        console.error('Error en POST /api/alumnos:', error);
-        return res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor al guardar el alumno.'
-        });
-    }
-});
-
-// ==========================================
-// ACTUALIZAR ALUMNO (PUT)
-// ==========================================
-app.put('/api/alumnos/:id', async(req, res) => {
-    try {
-        const { id } = req.params;
-        const { cedula, nombre, codigo_carrera, descripcion_carrera } = req.body;
-
-        if (!cedula || !cedula.trim() || !nombre || !nombre.trim() || !codigo_carrera || !codigo_carrera.trim()) {
-            return res.status(400).json({
-                success: false,
-                message: 'Todos los campos son obligatorios.'
-            });
-        }
-
-        const cedulaLimpia = cedula.trim();
-
-        // Comprobar que la cédula no le pertenezca a OTRO alumno
-        const [existente] = await db.query(
-            'SELECT id FROM alumnos WHERE cedula = ? AND id != ?', [cedulaLimpia, id]
-        );
-
-        if (existente && existente.length > 0) {
-            return res.status(400).json({
-                success: false,
-                message: `La cédula ${cedulaLimpia} pertenece a otro alumno.`
-            });
-        }
-
-        await db.query(
-            'UPDATE alumnos SET cedula = ?, nombre = ?, codigo_carrera = ?, descripcion_carrera = ? WHERE id = ?', [cedulaLimpia, nombre.trim(), codigo_carrera.trim(), (descripcion_carrera || '').trim(), id]
-        );
-
-        return res.json({
-            success: true,
-            message: 'Alumno actualizado correctamente.'
-        });
-
-    } catch (error) {
-        console.error('Error en PUT /api/alumnos:', error);
-        return res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor al actualizar el alumno.'
-        });
-    }
-});
-
-*/
 // ==========================================
 // RUTAS PARA EL MÓDULO DE ALUMNOS (CALLBACKS - TABLA: alumno)
 // ==========================================
@@ -944,7 +673,7 @@ app.put('/api/alumnos/:id', (req, res) => {
     });
 });
 
-// Endpoint para eliminar alumno
+
 // Endpoint para eliminar alumno
 app.delete('/api/alumnos/:id', async(req, res) => {
     const alumnoId = req.params.id;
@@ -982,10 +711,7 @@ app.delete('/api/alumnos/:id', async(req, res) => {
         res.status(500).json({ success: false, message: 'Error interno del servidor.' });
     }
 });
-// ==========================================
-// FIN RUTAS ALUMNOS
-// ==========================================
-//ALUMNO FIN 
+
 // ==========================================
 // API DE TAREAS
 // ==========================================
@@ -2201,87 +1927,6 @@ async function generarPDFAsesorias(datos) {
 }
 
 // RUTA ACCESIBLE DESDE EL MENÚ
-
-
-//final reporte_asesoria.html
-/*
-app.get('/reporte/asesorias', async(req, res) => {
-    try {
-        // Log para depurar en consola qué datos están almacenados en sesión
-        console.log('--- DATOS EN SESIÓN ---', req.session);
-
-        // Extracto de datos basado en los campos reales de la tabla 'asesor'
-        const usuarioSesion = req.session ? req.session.usuario : null;
-
-        // Obtiene 'cedula' y 'nombre' buscando tanto en la raíz de req.session como en req.session.usuario
-        const cedulaAsesor = (req.session && req.session.cedula) || (usuarioSesion && usuarioSesion.cedula);
-        const nombreAsesor = (req.session && req.session.nombre) || (usuarioSesion && usuarioSesion.nombre) || 'Asesor Académico';
-
-        // Validar si existe la sesión y la cédula extraída
-        if (!req.session || !cedulaAsesor) {
-            console.error('Error: No se encontró la cédula en req.session');
-            return res.status(401).send('Sesión no válida.');
-        }
-
-        const { fecha_inicio, fecha_fin } = req.query;
-
-        if (!fecha_inicio || !fecha_fin) {
-            return res.status(400).send('Debe seleccionar el rango de fechas.');
-        }
-
-        // Consulta filtrada en MySQL usando la columna cedula_asesor de control_asesoria
-        const query = `
-            SELECT 
-                DATE_FORMAT(fecha, '%d/%m/%Y') AS fecha,
-                cedula,
-                nombre_alumno,
-                codigo_carrera,
-                codigo_materia,
-                tipo_asesoria
-            FROM control_asesoria
-            WHERE cedula_asesor = ? 
-              AND fecha BETWEEN ? AND ?
-            ORDER BY fecha ASC
-        `;
-
-        const [filas] = await db.execute(query, [cedulaAsesor, fecha_inicio, fecha_fin]);
-
-        // Convertir imagen a Base64 para el reporte PDF
-        const rutaLogo = path.join(__dirname, 'views', 'jpg', 'logouna.jpg');
-        let logoBase64 = '';
-        if (fs.existsSync(rutaLogo)) {
-            const bitmap = fs.readFileSync(rutaLogo);
-            logoBase64 = `data:image/jpeg;base64,${bitmap.toString('base64')}`;
-        }
-
-        // Generar Buffer del PDF enviando la data a la plantilla
-        const pdfBuffer = await generarPDFAsesorias({
-            logoPath: logoBase64,
-            fecha_inicio: new Date(fecha_inicio + 'T00:00:00').toLocaleDateString('es-VE'),
-            fecha_fin: new Date(fecha_fin + 'T00:00:00').toLocaleDateString('es-VE'),
-            asesorias: filas,
-            nombre_asesor: nombreAsesor,
-            cedula_asesor: cedulaAsesor
-        });
-
-        // Configurar cabeceras explícitas y enviar respuesta binaria limpia
-        res.writeHead(200, {
-            'Content-Type': 'application/pdf',
-            'Content-Disposition': `attachment; filename="Reporte_Asesorias_${cedulaAsesor}.pdf"`,
-            'Content-Length': pdfBuffer.length,
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-        });
-
-        res.end(pdfBuffer);
-
-    } catch (error) {
-        console.error('Error al generar el PDF:', error);
-        res.status(500).send('Error interno generando el reporte.');
-    }
-});
-*/
 app.get('/reporte/asesorias', async(req, res) => {
     try {
         console.log('--- DATOS EN SESIÓN ---', req.session);
