@@ -2152,15 +2152,24 @@ async function generarPDFAsesorias(datosPlantilla) {
 }
 
 // RUTA ACCESIBLE DESDE EL MENÚ
+
+
+//final reporte_asesoria.html
 app.get('/reporte/asesorias', async(req, res) => {
     try {
-        // 1. Extraer los datos de sesión soportando ambas estructuras
-        const usuario = req.session ? req.session.usuario : null;
-        const cedulaAsesor = req.session ? .cedula_asesor || usuario ? .cedula || usuario ? .cedula_asesor;
-        const nombreAsesor = req.session ? .nombre_asesor || usuario ? .nombre || usuario ? .nombre_asesor || 'Asesor Académico';
+        // Log para depurar en consola qué datos están almacenados en sesión
+        console.log('--- DATOS EN SESIÓN ---', req.session);
 
-        // Validar si realmente existe la cédula del asesor autenticado
+        // Extracto de datos basado en los campos reales de tu tabla 'asesor'
+        const usuarioSesion = req.session ? req.session.usuario : null;
+
+        // Obtiene 'cedula' y 'nombre' buscando tanto en la raíz de req.session como en req.session.usuario
+        const cedulaAsesor = req.session ? .cedula || usuarioSesion ? .cedula;
+        const nombreAsesor = req.session ? .nombre || usuarioSesion ? .nombre || 'Asesor Académico';
+
+        // Validar si existe la sesión y la cédula extraída
         if (!req.session || !cedulaAsesor) {
+            console.error('Error: No se encontró la cédula en req.session');
             return res.status(401).send('Sesión no válida.');
         }
 
@@ -2170,7 +2179,7 @@ app.get('/reporte/asesorias', async(req, res) => {
             return res.status(400).send('Debe seleccionar el rango de fechas.');
         }
 
-        // Consulta filtrada en MySQL
+        // Consulta filtrada en MySQL usando la columna cedula_asesor de control_asesoria
         const query = `
             SELECT 
                 DATE_FORMAT(fecha, '%d/%m/%Y') AS fecha,
@@ -2187,7 +2196,7 @@ app.get('/reporte/asesorias', async(req, res) => {
 
         const [filas] = await db.execute(query, [cedulaAsesor, fecha_inicio, fecha_fin]);
 
-        // Convertir imagen a Base64 para garantizar que cargue en Railway
+        // Convertir imagen a Base64 para el reporte PDF
         const rutaLogo = path.join(__dirname, 'public', 'jpg', 'logouna.jpg');
         let logoBase64 = '';
         if (fs.existsSync(rutaLogo)) {
@@ -2205,7 +2214,7 @@ app.get('/reporte/asesorias', async(req, res) => {
             cedula_asesor: cedulaAsesor
         });
 
-        // Retornar archivo al usuario
+        // Retornar archivo PDF al navegador
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `inline; filename=Reporte_Asesorias_${cedulaAsesor}.pdf`);
         res.send(pdfBuffer);
@@ -2215,10 +2224,6 @@ app.get('/reporte/asesorias', async(req, res) => {
         res.status(500).send('Error interno generando el reporte.');
     }
 });
-
-
-//final reporte_asesoria.html
-
 // Asegurar que la variable PORT esté declarada antes del listen
 const PORT = process.env.PORT || 3000;
 // ===================================================
