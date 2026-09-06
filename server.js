@@ -2104,11 +2104,10 @@ app.get('/api/reporte_actividades', (req, res) => {
 
 // Asumiendo que 'db' es tu objeto de conexión/pool a MySQL en server.js
 // Ruta para servir o visualizar la plantilla web de asesorías
-app.get('/reporte-asesoria-vista', (req, res) => {
+app.get('/reporte_asesoria', (req, res) => {
     if (!req.session || !req.session.usuario) {
         return res.redirect('back');
     }
-    // El servidor busca el archivo y lo entrega
     res.sendFile(path.join(__dirname, 'views', 'reporte_asesoria.html'));
 });
 
