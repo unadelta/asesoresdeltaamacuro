@@ -2160,13 +2160,13 @@ app.get('/reporte/asesorias', async(req, res) => {
         // Log para depurar en consola qué datos están almacenados en sesión
         console.log('--- DATOS EN SESIÓN ---', req.session);
 
-        // Extracto de datos basado en los campos reales de tu tabla 'asesor'
+        // Extracto de datos basado en los campos reales de la tabla 'asesor'
         const usuarioSesion = req.session ? req.session.usuario : null;
 
         // Obtiene 'cedula' y 'nombre' buscando tanto en la raíz de req.session como en req.session.usuario
-        
         const cedulaAsesor = (req.session && req.session.cedula) || (usuarioSesion && usuarioSesion.cedula);
         const nombreAsesor = (req.session && req.session.nombre) || (usuarioSesion && usuarioSesion.nombre) || 'Asesor Académico';
+
         // Validar si existe la sesión y la cédula extraída
         if (!req.session || !cedulaAsesor) {
             console.error('Error: No se encontró la cédula en req.session');
@@ -2197,7 +2197,7 @@ app.get('/reporte/asesorias', async(req, res) => {
         const [filas] = await db.execute(query, [cedulaAsesor, fecha_inicio, fecha_fin]);
 
         // Convertir imagen a Base64 para el reporte PDF
-        const rutaLogo = path.join(__dirname, 'public', 'jpg', 'logouna.jpg');
+        const rutaLogo = path.join(__dirname, 'views', 'jpg', 'logouna.jpg');
         let logoBase64 = '';
         if (fs.existsSync(rutaLogo)) {
             const bitmap = fs.readFileSync(rutaLogo);
@@ -2214,10 +2214,17 @@ app.get('/reporte/asesorias', async(req, res) => {
             cedula_asesor: cedulaAsesor
         });
 
-        // Retornar archivo PDF al navegador
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `inline; filename=Reporte_Asesorias_${cedulaAsesor}.pdf`);
-        res.send(pdfBuffer);
+        // Configurar cabeceras explícitas y enviar respuesta binaria limpia
+        res.writeHead(200, {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename="Reporte_Asesorias_${cedulaAsesor}.pdf"`,
+            'Content-Length': pdfBuffer.length,
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+        });
+
+        res.end(pdfBuffer);
 
     } catch (error) {
         console.error('Error al generar el PDF:', error);
