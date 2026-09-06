@@ -2102,13 +2102,14 @@ app.get('/api/reporte_actividades', (req, res) => {
 });
 
 
-// Asumiendo que 'db' es tu objeto de conexión/pool a MySQL en server.js
-// Ruta para servir o visualizar la plantilla web de asesorías
-app.get('/reporte_asesoria', (req, res) => {
+
+
+app.get('/form_reporte_asesoria', (req, res) => {
     if (!req.session || !req.session.usuario) {
         return res.redirect('back');
     }
-    res.sendFile(path.join(__dirname, 'views', 'reporte_asesoria.html'));
+
+    res.sendFile(path.join(__dirname, 'views', 'form_reporte_asesoria.html'));
 });
 
 // FUNCIÓN PARA PROCESAR EL HTML Y CONVERTIRLO A PDF
@@ -2184,7 +2185,7 @@ app.get('/reporte/asesorias', async(req, res) => {
         const [filas] = await db.execute(query, [cedulaAsesor, fecha_inicio, fecha_fin]);
 
         // Convertir imagen a Base64 para garantizar que cargue en Railway
-        const rutaLogo = path.join(__dirname, 'public', 'jpg', 'logouna.jpg');
+        const rutaLogo = path.join(__dirname, 'views', 'jpg', 'logouna.jpg');
         let logoBase64 = '';
         if (fs.existsSync(rutaLogo)) {
             const bitmap = fs.readFileSync(rutaLogo);
