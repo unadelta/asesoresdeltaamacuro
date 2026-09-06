@@ -1,0 +1,9 @@
+# Dependencias (CRÍTICO)
+node_modules/
+
+# Variables de entorno (CRÍTICO: NUNCA SUBIR ESTO)
+.env
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
