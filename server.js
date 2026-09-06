@@ -6,8 +6,7 @@ const puppeteer = require('puppeteer');
 const ejs = require('ejs');
 const path = require('path');
 const fs = require('fs');
-
-const session = require('express-session');
+const session = express.session ? require('express-session') : require('express-session'); // Mantenido según tu estructura
 const MySQLStore = require('express-mysql-session')(session);
 
 
