@@ -6,7 +6,7 @@ const puppeteer = require('puppeteer');
 const ejs = require('ejs');
 const path = require('path');
 const fs = require('fs');
-
+const session = express.session ? require('express-session') : require('express-session'); // Mantenido según tu estructura
 // Configuración del Pool de MySQL
 const connectionString = process.env.MYSQL_URL || process.env.MYSQLPRIVATE_URL || process.env.MYSQLPUBLIC_URL;
 
@@ -37,18 +37,6 @@ db.getConnection((err, connection) => {
         connection.release(); // Importante: devolver la conexión al pool
     }
 });
-
-
-
-//const express = require('express');
-//const mysql = require('mysql2');
-const session = express.session ? require('express-session') : require('express-session'); // Mantenido según tu estructura
-const path = require('path');
-
-//imprimimir pdf
-const puppeteer = require('puppeteer');
-//const path = require('path');
-const fs = require('fs');
 
 
 
