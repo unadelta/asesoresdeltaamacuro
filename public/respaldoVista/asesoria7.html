@@ -95,8 +95,7 @@
                             <!-- Código de Carrera (Automático) -->
                             <div class="col-md-6 mb-3">
                                 <label for="codigoCarrera" class="form-label fw-semibold">Carrera del Alumno</label>
-                                <!-- COMENTARIO DE CAMBIO: Este input ahora solo almacenará el código -->
-                                <input type="text" class="form-control bg-light" id="codigoCarrera" placeholder="Carrera (solo código)" readonly required>
+                                <input type="text" class="form-control bg-light" id="codigoCarrera" placeholder="Carrera" readonly required>
                             </div>
                             <!-- Tipo de Asesoría -->
                             <div class="col-md-6 mb-3">
@@ -296,10 +295,7 @@
             if (alumnoEncontrado) {
                 document.getElementById('cedulaAlumno').value = alumnoEncontrado.cedula || '';
                 document.getElementById('nombreAlumno').value = alumnoEncontrado.nombre || '';
-
-                // COMENTARIO DE CAMBIO: Aquí es donde se extrae solo el código.
-                // Anteriormente era: `${alumnoEncontrado.codigo_carrera || ''} - ${alumnoEncontrado.descripcion_carrera || ''}`;
-                document.getElementById('codigoCarrera').value = alumnoEncontrado.codigo_carrera || '';
+                document.getElementById('codigoCarrera').value = `${alumnoEncontrado.codigo_carrera || ''} - ${alumnoEncontrado.descripcion_carrera || ''}`;
 
                 mensajeDiv.textContent = '¡Alumno seleccionado correctamente!';
                 mensajeDiv.className = 'form-text text-success fw-semibold';
@@ -322,7 +318,6 @@
             const idRegistro = document.getElementById('asesoriaId').value;
             const isEditing = Boolean(idRegistro);
 
-            // COMENTARIO DE CAMBIO: El valor que se obtiene de 'codigoCarrera' ya es solo el código.
             const data = {
                 cedula_alumno: document.getElementById('cedulaAlumno').value,
                 nombre_alumno: document.getElementById('nombreAlumno').value,
