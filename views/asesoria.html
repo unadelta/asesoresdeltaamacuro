@@ -143,76 +143,71 @@
         let modalAsesoriaInstance = null;
         let asesorActual = {};
         let listaAlumnosGlobal = [];
-        let listaAsesoriasGlobal = []; // Almacena los registros para edición local
+        let listaAsesoriasGlobal = [];
 
         document.addEventListener("DOMContentLoaded", async() => {
             modalAsesoriaInstance = new bootstrap.Modal(document.getElementById('modalAsesoria'));
 
-            try {
-                const navResponse = await fetch('/views/navbar.html');
-                if (!navResponse.ok) throw new Error('Error al cargar navbar');
-                const navHtml = await navResponse.text();
-                document.getElementById('navbar-container').innerHTML = navHtml;
-
-                const trySetUser = () => {
-                    const spanUsuario = document.getElementById('nombreUsuario');
-                    if (spanUsuario && asesorActual.nombre) {
-                        spanUsuario.textContent = asesorActual.nombre;
-                    } else {
-                        setTimeout(trySetUser, 50);
-                    }
-                };
-                trySetUser();
-            } catch (err) {
-                console.error("Error crítico navbar:", err);
-            }
+            // Carga diferida e independiente del navbar
+            fetch('/views/navbar.html')
+                .then(res => res.ok ? res.text() : Promise.reject(res))
+                .then(navHtml => {
+                    document.getElementById('navbar-container').innerHTML = navHtml;
+                    actualizarNombreNavbar();
+                })
+                .catch(err => console.error("Error al cargar navbar:", err));
 
             await inicializarDatos();
         });
 
+        function actualizarNombreNavbar() {
+            const spanUsuario = document.getElementById('nombreUsuario');
+            if (spanUsuario && asesorActual.nombre) {
+                spanUsuario.textContent = asesorActual.nombre;
+            }
+        }
+
         async function inicializarDatos() {
+            // 1. Validar sesión sin forzar redirección inmediata ante errores menores
             try {
                 const resUser = await fetch('/api/user-session');
-                const dataUser = await resUser.json();
-                if (dataUser.authenticated) {
-                    asesorActual = dataUser.user;
-                    const spanUsuario = document.getElementById('nombreUsuario');
-                    if (spanUsuario) spanUsuario.textContent = asesorActual.nombre || asesorActual.usuario;
-                    document.getElementById('nombreAsesor').value = asesorActual.nombre || asesorActual.usuario;
-                    document.getElementById('cedulaAsesor').value = asesorActual.cedula;
-                } else {
+                if (resUser.status === 401) {
                     window.location.href = '/';
                     return;
                 }
+                const dataUser = await resUser.json();
+                if (dataUser && dataUser.authenticated) {
+                    asesorActual = dataUser.user;
+                    actualizarNombreNavbar();
+                    document.getElementById('nombreAsesor').value = asesorActual.nombre || asesorActual.usuario || '';
+                    document.getElementById('cedulaAsesor').value = asesorActual.cedula || '';
+                }
             } catch (e) {
-                console.error("Error al obtener sesión:", e);
-                window.location.href = '/';
-                return;
+                console.warn("Advertencia al obtener datos de sesión:", e);
             }
 
+            // 2. Carga paralela de catálogos para optimizar tiempos de respuesta
             try {
-                const resAlumnos = await fetch('/api/alumnos');
-                const dataAlumnos = await resAlumnos.json();
+                const [resAlumnos, resTipos, resMaterias] = await Promise.all([
+                    fetch('/api/alumnos').then(r => r.json()).catch(() => []),
+                    fetch('/api/tipo_asesoria').then(r => r.json()).catch(() => []),
+                    fetch('/api/materia_una').then(r => r.json()).catch(() => [])
+                ]);
+
+                // Poblar Alumnos
                 const selectAlumno = document.getElementById('selectAlumno');
                 selectAlumno.innerHTML = '<option value="">Seleccione un alumno...</option>';
-                listaAlumnosGlobal = dataAlumnos.success ? dataAlumnos.data : (Array.isArray(dataAlumnos) ? dataAlumnos : []);
-
+                listaAlumnosGlobal = resAlumnos.success ? resAlumnos.data : (Array.isArray(resAlumnos) ? resAlumnos : []);
                 if (Array.isArray(listaAlumnosGlobal)) {
                     listaAlumnosGlobal.forEach(a => {
                         selectAlumno.innerHTML += `<option value="${a.cedula}">${a.cedula} - ${a.nombre}</option>`;
                     });
                 }
-            } catch (error) {
-                console.error("Error al cargar alumnos:", error);
-            }
 
-            try {
-                const resTipos = await fetch('/api/tipo_asesoria');
-                const dataTipos = await resTipos.json();
+                // Poblar Tipos de Asesoría
                 const selectTipo = document.getElementById('selectTipoAsesoria');
                 selectTipo.innerHTML = '<option value="">Seleccione tipo de asesoría...</option>';
-                const listaT = dataTipos.success ? dataTipos.data : (Array.isArray(dataTipos) ? dataTipos : []);
-
+                const listaT = resTipos.success ? resTipos.data : (Array.isArray(resTipos) ? resTipos : []);
                 if (Array.isArray(listaT)) {
                     listaT.forEach(t => {
                         const descripcion = t.descripcion_asesoria || t.descripcion;
@@ -221,40 +216,33 @@
                         }
                     });
                 }
-            } catch (error) {
-                console.error("Error al cargar tipos de asesoría:", error);
-            }
 
-            try {
-                const resMaterias = await fetch('/api/materia_una');
-                const dataMaterias = await resMaterias.json();
+                // Poblar Materias
                 const selectMateria = document.getElementById('selectMateria');
                 selectMateria.innerHTML = '<option value="">Seleccione una materia...</option>';
-                const listaM = dataMaterias.success ? dataMaterias.data : (Array.isArray(dataMaterias) ? dataMaterias : []);
-
+                const listaM = resMaterias.success ? resMaterias.data : (Array.isArray(resMaterias) ? resMaterias : []);
                 if (Array.isArray(listaM)) {
                     listaM.forEach(m => {
-                        const codigo = m.codigo;
-                        const descripcion = m.descripcion;
-                        if (codigo && descripcion) {
-                            selectMateria.innerHTML += `<option value="${codigo}">${codigo} - ${descripcion}</option>`;
+                        if (m.codigo && m.descripcion) {
+                            selectMateria.innerHTML += `<option value="${m.codigo}">${m.codigo} - ${m.descripcion}</option>`;
                         }
                     });
                 }
             } catch (error) {
-                console.error("Error al cargar materias de materia_una:", error);
+                console.error("Error al cargar catalogos auxiliares:", error);
             }
 
+            // 3. Cargar lista principal de asesorías
             await cargarControlAsesorias();
         }
 
         function abrirModalAsesoria() {
             document.getElementById('formAsesoria').reset();
-            document.getElementById('asesoriaId').value = ''; // Limpiar ID (modo creación)
+            document.getElementById('asesoriaId').value = '';
             document.getElementById('modalTituloLabel').textContent = 'Registrar Nueva Asesoría';
 
-            document.getElementById('nombreAsesor').value = asesorActual.nombre || asesorActual.usuario;
-            document.getElementById('cedulaAsesor').value = asesorActual.cedula;
+            document.getElementById('nombreAsesor').value = asesorActual.nombre || asesorActual.usuario || '';
+            document.getElementById('cedulaAsesor').value = asesorActual.cedula || '';
 
             document.getElementById('selectAlumno').value = '';
             document.getElementById('cedulaAlumno').value = '';
@@ -295,8 +283,6 @@
             if (alumnoEncontrado) {
                 document.getElementById('cedulaAlumno').value = alumnoEncontrado.cedula || '';
                 document.getElementById('nombreAlumno').value = alumnoEncontrado.nombre || '';
-
-                // CORRECCIÓN: Asignar únicamente el código corto de la carrera para evitar rebasar la BD
                 document.getElementById('codigoCarrera').value = alumnoEncontrado.codigo_carrera || alumnoEncontrado.cod_carrera || '';
 
                 mensajeDiv.textContent = '¡Alumno seleccionado correctamente!';
@@ -320,7 +306,6 @@
             const idRegistro = document.getElementById('asesoriaId').value;
             const isEditing = Boolean(idRegistro);
 
-            // CORRECCIÓN: Filtro de seguridad para limpiar el código de carrera antes de enviar la petición
             let codCarreraLimpio = document.getElementById('codigoCarrera').value.trim();
             if (codCarreraLimpio.includes(' - ')) {
                 codCarreraLimpio = codCarreraLimpio.split(' - ')[0];
@@ -378,6 +363,10 @@
                 tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm" role="status"></span> Actualizando registros...</td></tr>';
 
                 const res = await fetch('/api/control_asesoria');
+                if (res.status === 401) {
+                    window.location.href = '/';
+                    return;
+                }
                 const data = await res.json();
 
                 tbody.innerHTML = '';
@@ -386,7 +375,7 @@
                 if (Array.isArray(listaAsesoriasGlobal) && listaAsesoriasGlobal.length > 0) {
                     listaAsesoriasGlobal.forEach(item => {
                         const fechaObj = new Date(item.fecha_hora);
-                        const fechaF = fechaObj.toLocaleString('es-ES', {
+                        const fechaF = isNaN(fechaObj) ? 'N/A' : fechaObj.toLocaleString('es-ES', {
                             day: '2-digit',
                             month: '2-digit',
                             year: 'numeric',
@@ -432,7 +421,6 @@
                 return;
             }
 
-            // Rellenar modal con datos existentes
             document.getElementById('asesoriaId').value = id;
             document.getElementById('modalTituloLabel').textContent = 'Editar Asesoría';
 
@@ -468,7 +456,6 @@
                     const res = await fetch(`/api/control_asesoria/${id}`, {
                         method: 'DELETE'
                     });
-
                     const result = await res.json();
 
                     if (result.success) {
