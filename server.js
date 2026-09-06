@@ -2164,9 +2164,9 @@ app.get('/reporte/asesorias', async(req, res) => {
         const usuarioSesion = req.session ? req.session.usuario : null;
 
         // Obtiene 'cedula' y 'nombre' buscando tanto en la raíz de req.session como en req.session.usuario
-        const cedulaAsesor = req.session ? .cedula || usuarioSesion ? .cedula;
-        const nombreAsesor = req.session ? .nombre || usuarioSesion ? .nombre || 'Asesor Académico';
-
+        
+        const cedulaAsesor = (req.session && req.session.cedula) || (usuarioSesion && usuarioSesion.cedula);
+        const nombreAsesor = (req.session && req.session.nombre) || (usuarioSesion && usuarioSesion.nombre) || 'Asesor Académico';
         // Validar si existe la sesión y la cédula extraída
         if (!req.session || !cedulaAsesor) {
             console.error('Error: No se encontró la cédula en req.session');
