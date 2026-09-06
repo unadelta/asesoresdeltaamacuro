@@ -4,330 +4,482 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reporte de Asesorías - UNA Delta Amacuro</title>
+    <title>Gestión de Asesorías - Asesores UNA</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-
-    <style>
-        /* 1. Configuración de página física (Nativa) */
-        
-        @page {
-            size: letter landscape;
-            /* Márgenes pequeños pero suficientes para la impresora */
-            margin: 10mm;
-        }
-        /* 2. Estilos Base para Pantalla e Impresión */
-        
-        body {
-            background-color: #f8f9fa;
-            color: #212529;
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-        /* Contenedor que simula la hoja en pantalla */
-        
-        .page-container {
-            background: white;
-            width: 269mm;
-            /* Ancho carta ajustado a márgenes */
-            min-height: 195mm;
-            /* Alto carta ajustado */
-            margin: 10px auto;
-            padding: 5mm;
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
-            box-sizing: border-box;
-            /* Importante: Este contenedor no debe forzar saltos de página internos */
-            display: flex;
-            flex-direction: column;
-        }
-        /* 3. Estilos Específicos de Impresión (Lo que ve la impresora) */
-        
-        @media print {
-            body {
-                background-color: white;
-                /* IMPRESCINDIBLE: Forzar al navegador a imprimir colores de fondo */
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-            /* Ocultar elementos de la interfaz (botones, filtros) */
-            .no-print {
-                display: none !important;
-            }
-            /* Ajustar el contenedor al 100% de la hoja física */
-            .page-container {
-                box-shadow: none;
-                margin: 0;
-                padding: 2mm;
-                width: 100% !important;
-                min-height: auto !important;
-                border: none;
-            }
-            /* Permitir que el body y html crezcan varias páginas físicas */
-            html,
-            body {
-                height: auto;
-                overflow: visible;
-            }
-            /* Asegurar que la tabla se corte limpiamente entre páginas */
-            table.table-report {
-                page-break-inside: auto !important;
-            }
-            table.table-report tr {
-                page-break-inside: avoid;
-                page-break-after: auto;
-            }
-            table.table-report thead {
-                display: table-header-group;
-                /* Repetir cabecera en cada hoja */
-            }
-            table.table-report tfoot {
-                display: table-footer-group;
-                /* Repetir pie de tabla en cada hoja (raro pero posible) */
-            }
-        }
-        /* 4. Encabezado del Reporte (Diseño de flujo, no fixed) */
-        
-        .header-container {
-            border-bottom: 2px solid #0d6efd;
-            padding-bottom: 5px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .logo-una {
-            max-height: 45px;
-            object-fit: contain;
-        }
-        
-        .institution-title h4 {
-            margin: 0;
-            font-weight: bold;
-            color: #0d6efd;
-            font-size: 1.1rem;
-        }
-        
-        .institution-title h5 {
-            margin: 1px 0 0 0;
-            color: #495057;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-        /* 5. Cuerpo de la Tabla (Ocupa el resto del espacio) */
-        
-        .content-area {
-            flex-grow: 1;
-            /* Empuja el footer hacia abajo en pantalla */
-        }
-        
-        .table-report {
-            font-size: 0.75rem;
-            /* Fuente ligeramente más grande y legible */
-            width: 100%;
-            margin-bottom: 0;
-            table-layout: fixed;
-        }
-        
-        .table-report th {
-            background-color: #0d6efd !important;
-            /* Azul UNA forzado */
-            color: white;
-            text-align: center;
-            padding: 5px;
-            /* Más padding para legibilidad */
-            font-weight: 600;
-            border: 1px solid #dee2e6;
-        }
-        
-        .table-report td {
-            padding: 4px 5px;
-            /* Más padding */
-            vertical-align: middle;
-            border: 1px solid #dee2e6;
-            line-height: 1.2;
-            /* Más espacio entre líneas */
-        }
-        /* Filas intercaladas (efecto cebra) */
-        
-        .table-report tbody tr:nth-child(odd) {
-            background-color: #fdfdfd !important;
-        }
-        
-        .table-report tbody tr:nth-child(even) {
-            background-color: #f1f4f9 !important;
-        }
-        /* 6. Pie de Página (Firmas) - Fluye después de la tabla */
-        
-        .footer-signature {
-            margin-top: 20px;
-            /* Espacio después de la tabla */
-            padding-top: 10px;
-            border-top: 1px solid #ced4da;
-            font-size: 0.8rem;
-            /* Firmas legibles */
-            page-break-inside: avoid;
-            /* Mantener las firmas juntas */
-        }
-        
-        .signature-line {
-            border-top: 1px solid #333;
-            width: 85%;
-            margin: 25px auto 3px auto;
-        }
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
-<body>
+<body class="bg-light">
 
-    <!-- BARRA DE ACCIONES (No se imprime) -->
-    <div class="container my-3 no-print">
-        <div class="card shadow-sm border-0 p-3 bg-white">
-            <div class="row align-items-end g-3">
-                <div class="col-md-3">
-                    <a href="/dashboard" class="btn btn-outline-secondary btn-sm w-100"><i class="bi bi-arrow-left me-1"></i> Dashboard</a>
-                </div>
-                <div class="col-md-6 text-center">
-                    <h5 class="text-primary m-0">Generar Reporte de Asesorías</h5>
-                </div>
-                <div class="col-md-3">
-                    <button onclick="window.print()" class="btn btn-success btn-sm w-100" title="Imprimir Reporte"><i class="bi bi-printer-fill me-2"></i> Imprimir / Guardar PDF</button>
+    <!-- NAVBAR PRINCIPAL -->
+    <div id="navbar-container"></div>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="container mt-4 mb-5">
+        <div class="row mb-3 align-items-center">
+            <div class="col-sm-6">
+                <h3 class="fw-bold text-primary"><i class="bi bi-journal-text me-2"></i>Módulo de Registro de Asesorías</h3>
+            </div>
+            <div class="col-sm-6 text-sm-end mt-2 mt-sm-0">
+                <button class="btn btn-success" onclick="abrirModalAsesoria()">
+                    <i class="bi bi-plus-circle me-1"></i> Registrar Nueva Asesoría
+                </button>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-primary">
+                            <tr>
+                                <th>Fecha / Hora</th>
+                                <th>Alumno</th>
+                                <th>Cédula Alumno</th>
+                                <th>Carrera</th>
+                                <th>Tipo de Asesoría</th>
+                                <th>Materia</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaAsesorias">
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">Cargando registros...</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- CONTENEDOR DE LA PÁGINA (Simulación de hoja) -->
-    <div class="page-container">
+    <!-- MODAL REGISTRAR / EDITAR ASESORÍA -->
+    <div class="modal fade" id="modalAsesoria" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form id="formAsesoria" onsubmit="guardarAsesoria(event)">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title" id="modalTituloLabel">Registrar Nueva Asesoría</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Input oculto para manejar el ID en modo edición -->
+                        <input type="hidden" id="asesoriaId">
 
-        <!-- Encabezado (Flujo normal, se imprimirá arriba en cada hoja) -->
-        <div class="header-container">
-            <div class="col-8 d-flex align-items-center">
-                <img src="/jpg/logouna.jpg" alt="Logo UNA" class="logo-una me-3" onerror="this.style.display='none'">
-                <div class="institution-title">
-                    <h4>Universidad Nacional Abierta</h4>
-                    <h5>Centro Local Delta Amacuro</h5>
-                    <div class="text-muted fw-bold mt-1" style="font-size: 0.8rem;">REPORTE DE ASESORÍAS ACADÉMICAS</div>
-                </div>
-            </div>
-            <div class="col-4 text-end">
-                <div class="text-muted" style="font-size: 0.7rem;">Emitido: ${new Date().toLocaleDateString()}</div>
-            </div>
-        </div>
+                        <!-- Selección de Alumno por Combobox -->
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label for="selectAlumno" class="form-label fw-semibold">Seleccionar Alumno</label>
+                                <select id="selectAlumno" class="form-select" onchange="seleccionarAlumno(this)" required>
+                                    <option value="">Seleccione un alumno...</option>
+                                </select>
+                                <div class="form-text" id="mensajeAlumno">Seleccione un alumno del listado para autocompletar sus datos.</div>
+                            </div>
+                        </div>
 
-        <!-- Área de contenido (Tabla) -->
-        <div class="content-area">
-            <div class="table-responsive">
-                <table class="table table-bordered table-report align-middle" id="tablaReporte">
-                    <thead>
-                        <tr>
-                            <th style="width: 5%;">N°</th>
-                            <th style="width: 15%;">Cédula</th>
-                            <th style="width: 40%;">Nombre del Alumno</th>
-                            <th style="width: 10%;">Carrera</th>
-                            <th style="width: 10%;">Materia</th>
-                            <!-- Columna Eliminada: style="width: 25%;">Observación / Tema -->
-                            <th style="width: 20%;">Fecha</th>
-                        </tr>
-                    </thead>
-                    <tbody id="cuerpoTabla">
-                        <tr>
-                            <td colspan="6" class="text-center text-muted py-4"><em>Cargando datos...</em></td>
-                        </tr>
-                        <!-- Las filas se insertarán aquí vía JS -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
+                        <div class="row">
+                            <!-- Cédula Alumno (Automático) -->
+                            <div class="col-md-6 mb-3">
+                                <label for="cedulaAlumno" class="form-label fw-semibold">Cédula del Alumno</label>
+                                <input type="text" class="form-control bg-light" id="cedulaAlumno" placeholder="Cédula" readonly required>
+                            </div>
+                            <!-- Nombre y Apellido Alumno (Automático) -->
+                            <div class="col-md-6 mb-3">
+                                <label for="nombreAlumno" class="form-label fw-semibold">Nombre y Apellido del Alumno</label>
+                                <input type="text" class="form-control bg-light" id="nombreAlumno" placeholder="Nombre y apellido" readonly required>
+                            </div>
+                        </div>
 
-        <!-- Pie de Página con Firmas (Flujo normal, aparece al final de la tabla) -->
-        <div class="footer-signature">
-            <div class="row text-center mt-4">
-                <div class="col-4">
-                    <div class="signature-line"></div>
-                    <div class="fw-bold text-truncate" style="font-size: 0.8rem;" id="nombreAsesorFirma">Prof. (a) Asesor</div>
-                    <div class="text-muted" style="font-size: 0.7rem;">Asesor Académico</div>
-                </div>
-                <div class="col-4 offset-4">
-                    <!-- Espacio para la segunda firma a la derecha -->
-                    <div class="signature-line"></div>
-                    <div class="fw-bold" style="font-size: 0.8rem;">Dra. Yovinsa Salazar</div>
-                    <div class="text-muted" style="font-size: 0.7rem;">Jefa de la Unidad Académica</div>
-                </div>
-            </div>
-            <div class="text-center text-muted mt-3 no-print" style="font-size: 0.65rem;">
-                Documento generado automáticamente por el sistema de control de estudios.
+                        <div class="row">
+                            <!-- Código de Carrera (Automático) -->
+                            <div class="col-md-6 mb-3">
+                                <label for="codigoCarrera" class="form-label fw-semibold">Carrera del Alumno</label>
+                                <input type="text" class="form-control bg-light" id="codigoCarrera" placeholder="Carrera" readonly required>
+                            </div>
+                            <!-- Tipo de Asesoría -->
+                            <div class="col-md-6 mb-3">
+                                <label for="selectTipoAsesoria" class="form-label fw-semibold">Tipo de Asesoría</label>
+                                <select id="selectTipoAsesoria" class="form-select" required>
+                                    <option value="">Seleccione tipo de asesoría...</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Materia -->
+                            <div class="col-md-6 mb-3">
+                                <label for="selectMateria" class="form-label fw-semibold">Materia</label>
+                                <select id="selectMateria" class="form-select" required>
+                                    <option value="">Seleccione una materia...</option>
+                                </select>
+                            </div>
+                            <!-- Fecha y Hora -->
+                            <div class="col-md-6 mb-3">
+                                <label for="fechaHora" class="form-label fw-semibold">Fecha y Hora</label>
+                                <input type="text" class="form-control bg-light" id="fechaHora" readonly required>
+                            </div>
+                        </div>
+
+                        <!-- Campos ocultos de soporte -->
+                        <div class="row" style="display: none;">
+                            <div class="col-md-6 mb-3">
+                                <input type="text" class="form-control" id="nombreAsesor">
+                                <input type="hidden" id="cedulaAsesor">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" id="btnGuardarAsesoria">Guardar Asesoría</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
-    <!-- SCRIPTS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Al cargar la página, obtenemos la sesión y los datos
+        let modalAsesoriaInstance = null;
+        let asesorActual = {};
+        let listaAlumnosGlobal = [];
+        let listaAsesoriasGlobal = []; // Almacena los registros para edición local
+
         document.addEventListener("DOMContentLoaded", async() => {
-            await cargarDatosIniciales();
+            modalAsesoriaInstance = new bootstrap.Modal(document.getElementById('modalAsesoria'));
+
+            try {
+                const navResponse = await fetch('/views/navbar.html');
+                if (!navResponse.ok) throw new Error('Error al cargar navbar');
+                const navHtml = await navResponse.text();
+                document.getElementById('navbar-container').innerHTML = navHtml;
+
+                const trySetUser = () => {
+                    const spanUsuario = document.getElementById('nombreUsuario');
+                    if (spanUsuario && asesorActual.nombre) {
+                        spanUsuario.textContent = asesorActual.nombre;
+                    } else {
+                        setTimeout(trySetUser, 50);
+                    }
+                };
+                trySetUser();
+            } catch (err) {
+                console.error("Error crítico navbar:", err);
+            }
+
+            await inicializarDatos();
         });
 
-        async function cargarDatosIniciales() {
+        async function inicializarDatos() {
             try {
-                // 1. Obtener sesión del usuario
                 const resUser = await fetch('/api/user-session');
                 const dataUser = await resUser.json();
-                if (dataUser.authenticated && dataUser.user) {
-                    // Asignar nombre del asesor logueado a la firma
-                    const nombreAsesor = dataUser.user.nombre || dataUser.user.usuario || "Asesor Académico";
-                    document.getElementById('nombreAsesorFirma').textContent = nombreAsesor;
+                if (dataUser.authenticated) {
+                    asesorActual = dataUser.user;
+                    const spanUsuario = document.getElementById('nombreUsuario');
+                    if (spanUsuario) spanUsuario.textContent = asesorActual.nombre || asesorActual.usuario;
+                    document.getElementById('nombreAsesor').value = asesorActual.nombre || asesorActual.usuario;
+                    document.getElementById('cedulaAsesor').value = asesorActual.cedula;
+                } else {
+                    window.location.href = '/';
+                    return;
                 }
-
-                // 2. Obtener datos de la tabla controlasesoria
-                const resAsesorias = await fetch('/api/controlasesoria');
-                const dataAsesorias = await resAsesorias.json();
-
-                // Extraer el array de datos
-                const lista = Array.isArray(dataAsesorias) ? dataAsesorias : (dataAsesorias.data || dataAsesorias.resultado || []);
-
-                // 3. Llenar la tabla en pantalla (sin paginación JS, el navegador lo hace al imprimir)
-                llenarTablaHTML(lista);
-
-            } catch (err) {
-                console.error("Error al cargar datos:", err);
-                document.getElementById('cuerpoTabla').innerHTML = `<tr><td colspan="6" class="alert alert-danger text-center m-0">Error al conectar con el servidor.</td></tr>`;
-            }
-        }
-
-        function llenarTablaHTML(datos) {
-            const cuerpoTabla = document.getElementById('cuerpoTabla');
-            cuerpoTabla.innerHTML = ''; // Limpiar spinner
-
-            if (datos.length === 0) {
-                cuerpoTabla.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4"><em>No se encontraron registros de asesorías.</em></td></tr>`;
+            } catch (e) {
+                console.error("Error al obtener sesión:", e);
+                window.location.href = '/';
                 return;
             }
 
-            datos.forEach((item, index) => {
-                // Formatear fecha (asumiendo ISO YYYY-MM-DD o formato legible)
-                let fechaFormateada = item.fecha || item.fecha_hora || 'N/D';
-                if (fechaFormateada !== 'N/D' && fechaFormateada.includes('T')) {
-                    fechaFormateada = fechaFormateada.split('T')[0];
-                }
+            try {
+                const resAlumnos = await fetch('/api/alumnos');
+                const dataAlumnos = await resAlumnos.json();
+                const selectAlumno = document.getElementById('selectAlumno');
+                selectAlumno.innerHTML = '<option value="">Seleccione un alumno...</option>';
+                listaAlumnosGlobal = dataAlumnos.success ? dataAlumnos.data : (Array.isArray(dataAlumnos) ? dataAlumnos : []);
 
-                // Crear fila
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td class="text-center fw-semibold">${index + 1}</td>
-                    <td class="text-center">${item.cedula_alumno || ''}</td>
-                    <td class="text-start">${item.nombre_alumno || ''}</td>
-                    <td class="text-center"><span class="badge bg-light text-dark border">${item.codigo_carrera || ''}</span></td>
-                    <td class="text-center"><span class="badge bg-secondary">${item.codigo_materia || ''}</span></td>
-                    <!-- Celda Eliminada: item.observacion || item.tema || '' -->
-                    <td class="text-center">${fechaFormateada}</td>
-                `;
-                cuerpoTabla.appendChild(row);
+                if (Array.isArray(listaAlumnosGlobal)) {
+                    listaAlumnosGlobal.forEach(a => {
+                        selectAlumno.innerHTML += `<option value="${a.cedula}">${a.cedula} - ${a.nombre}</option>`;
+                    });
+                }
+            } catch (error) {
+                console.error("Error al cargar alumnos:", error);
+            }
+
+            try {
+                const resTipos = await fetch('/api/tipo_asesoria');
+                const dataTipos = await resTipos.json();
+                const selectTipo = document.getElementById('selectTipoAsesoria');
+                selectTipo.innerHTML = '<option value="">Seleccione tipo de asesoría...</option>';
+                const listaT = dataTipos.success ? dataTipos.data : (Array.isArray(dataTipos) ? dataTipos : []);
+
+                if (Array.isArray(listaT)) {
+                    listaT.forEach(t => {
+                        const descripcion = t.descripcion_asesoria || t.descripcion;
+                        if (descripcion) {
+                            selectTipo.innerHTML += `<option value="${descripcion}">${descripcion}</option>`;
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error("Error al cargar tipos de asesoría:", error);
+            }
+
+            try {
+                const resMaterias = await fetch('/api/materia_una');
+                const dataMaterias = await resMaterias.json();
+                const selectMateria = document.getElementById('selectMateria');
+                selectMateria.innerHTML = '<option value="">Seleccione una materia...</option>';
+                const listaM = dataMaterias.success ? dataMaterias.data : (Array.isArray(dataMaterias) ? dataMaterias : []);
+
+                if (Array.isArray(listaM)) {
+                    listaM.forEach(m => {
+                        const codigo = m.codigo;
+                        const descripcion = m.descripcion;
+                        if (codigo && descripcion) {
+                            selectMateria.innerHTML += `<option value="${codigo}">${codigo} - ${descripcion}</option>`;
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error("Error al cargar materias de materia_una:", error);
+            }
+
+            await cargarControlAsesorias();
+        }
+
+        function abrirModalAsesoria() {
+            document.getElementById('formAsesoria').reset();
+            document.getElementById('asesoriaId').value = ''; // Limpiar ID (modo creación)
+            document.getElementById('modalTituloLabel').textContent = 'Registrar Nueva Asesoría';
+
+            document.getElementById('nombreAsesor').value = asesorActual.nombre || asesorActual.usuario;
+            document.getElementById('cedulaAsesor').value = asesorActual.cedula;
+
+            document.getElementById('selectAlumno').value = '';
+            document.getElementById('cedulaAlumno').value = '';
+            document.getElementById('nombreAlumno').value = '';
+            document.getElementById('codigoCarrera').value = '';
+
+            const mensajeAlumno = document.getElementById('mensajeAlumno');
+            mensajeAlumno.textContent = 'Seleccione un alumno del listado para autocompletar sus datos.';
+            mensajeAlumno.className = 'form-text text-muted';
+
+            const ahora = new Date();
+            const fechaStr = ahora.getDate().toString().padStart(2, '0') + '/' +
+                (ahora.getMonth() + 1).toString().padStart(2, '0') + '/' +
+                ahora.getFullYear() + ' ' +
+                ahora.getHours().toString().padStart(2, '0') + ':' +
+                ahora.getMinutes().toString().padStart(2, '0') + ':' +
+                ahora.getSeconds().toString().padStart(2, '0');
+            document.getElementById('fechaHora').value = fechaStr;
+
+            modalAsesoriaInstance.show();
+        }
+
+        function seleccionarAlumno(selectElement) {
+            const cedulaSeleccionada = selectElement.value;
+            const mensajeDiv = document.getElementById('mensajeAlumno');
+
+            if (!cedulaSeleccionada) {
+                document.getElementById('cedulaAlumno').value = '';
+                document.getElementById('nombreAlumno').value = '';
+                document.getElementById('codigoCarrera').value = '';
+                mensajeDiv.textContent = 'Seleccione un alumno del listado para autocompletar sus datos.';
+                mensajeDiv.className = 'form-text text-muted';
+                return;
+            }
+
+            const alumnoEncontrado = listaAlumnosGlobal.find(a => a.cedula === cedulaSeleccionada);
+
+            if (alumnoEncontrado) {
+                document.getElementById('cedulaAlumno').value = alumnoEncontrado.cedula || '';
+                document.getElementById('nombreAlumno').value = alumnoEncontrado.nombre || '';
+                document.getElementById('codigoCarrera').value = `${alumnoEncontrado.codigo_carrera || ''} - ${alumnoEncontrado.descripcion_carrera || ''}`;
+
+                mensajeDiv.textContent = '¡Alumno seleccionado correctamente!';
+                mensajeDiv.className = 'form-text text-success fw-semibold';
+            } else {
+                document.getElementById('cedulaAlumno').value = '';
+                document.getElementById('nombreAlumno').value = '';
+                document.getElementById('codigoCarrera').value = '';
+                mensajeDiv.textContent = 'No se pudieron cargar los datos del alumno seleccionado.';
+                mensajeDiv.className = 'form-text text-danger';
+            }
+        }
+
+        async function guardarAsesoria(e) {
+            e.preventDefault();
+
+            const btnGuardar = document.getElementById('btnGuardarAsesoria');
+            btnGuardar.disabled = true;
+            btnGuardar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...';
+
+            const idRegistro = document.getElementById('asesoriaId').value;
+            const isEditing = Boolean(idRegistro);
+
+            const data = {
+                cedula_alumno: document.getElementById('cedulaAlumno').value,
+                nombre_alumno: document.getElementById('nombreAlumno').value,
+                codigo_carrera: document.getElementById('codigoCarrera').value,
+                tipo_asesoria: document.getElementById('selectTipoAsesoria').value,
+                codigo_materia: document.getElementById('selectMateria').value,
+                cedula_asesor: document.getElementById('cedulaAsesor').value,
+                nombre_asesor: document.getElementById('nombreAsesor').value
+            };
+
+            const url = isEditing ? `/api/control_asesoria/${idRegistro}` : '/api/control_asesoria';
+            const method = isEditing ? 'PUT' : 'POST';
+
+            try {
+                const res = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.json();
+
+                if (result.success) {
+                    modalAsesoriaInstance.hide();
+                    await Swal.fire({
+                        icon: 'success',
+                        title: '¡Éxito!',
+                        text: isEditing ? 'La asesoría se ha actualizado correctamente.' : 'La asesoría se ha registrado correctamente.',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    await cargarControlAsesorias();
+                } else {
+                    Swal.fire('Atención', result.message || 'No se pudo completar la operación.', 'warning');
+                }
+            } catch (error) {
+                console.error("Error al guardar/actualizar:", error);
+                Swal.fire('Error de Conexión', 'No se pudo conectar con el servidor.', 'error');
+            } finally {
+                btnGuardar.disabled = false;
+                btnGuardar.textContent = 'Guardar Asesoría';
+            }
+        }
+
+        async function cargarControlAsesorias() {
+            const tbody = document.getElementById('tablaAsesorias');
+            try {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm" role="status"></span> Actualizando registros...</td></tr>';
+
+                const res = await fetch('/api/control_asesoria');
+                const data = await res.json();
+
+                tbody.innerHTML = '';
+                listaAsesoriasGlobal = data.success ? data.data : (Array.isArray(data) ? data : []);
+
+                if (Array.isArray(listaAsesoriasGlobal) && listaAsesoriasGlobal.length > 0) {
+                    listaAsesoriasGlobal.forEach(item => {
+                        const fechaObj = new Date(item.fecha_hora);
+                        const fechaF = fechaObj.toLocaleString('es-ES', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                        });
+
+                        const registroId = item.id || item._id;
+
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="text-nowrap">${fechaF}</td>
+                            <td>${item.nombre_alumno || 'N/A'}</td>
+                            <td>${item.cedula_alumno || 'N/A'}</td>
+                            <td><span class="badge bg-secondary text-truncate" style="max-width: 150px;" title="${item.codigo_carrera || ''}">${item.codigo_carrera || 'N/A'}</span></td>
+                            <td>${item.tipo_asesoria || 'N/A'}</td>
+                            <td><span class="badge bg-info text-dark text-truncate" style="max-width: 150px;" title="${item.codigo_materia || ''}">${item.codigo_materia || 'N/A'}</span></td>
+                            <td class="text-center text-nowrap">
+                                <button class="btn btn-sm btn-outline-primary me-1" onclick="editarAsesoria('${registroId}')" title="Editar">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="eliminarAsesoria('${registroId}')" title="Eliminar">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4">No hay asesorías registradas recientemente.</td></tr>`;
+                }
+            } catch (error) {
+                console.error("Error al cargar control de asesorías:", error);
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4">Error al conectar con el servidor para obtener datos.</td></tr>`;
+            }
+        }
+
+        function editarAsesoria(id) {
+            const registro = listaAsesoriasGlobal.find(item => (item.id == id || item._id == id));
+            if (!registro) {
+                Swal.fire('Error', 'No se encontró el registro para editar.', 'error');
+                return;
+            }
+
+            // Rellenar modal con datos existentes
+            document.getElementById('asesoriaId').value = id;
+            document.getElementById('modalTituloLabel').textContent = 'Editar Asesoría';
+
+            document.getElementById('selectAlumno').value = registro.cedula_alumno || '';
+            document.getElementById('cedulaAlumno').value = registro.cedula_alumno || '';
+            document.getElementById('nombreAlumno').value = registro.nombre_alumno || '';
+            document.getElementById('codigoCarrera').value = registro.codigo_carrera || '';
+            document.getElementById('selectTipoAsesoria').value = registro.tipo_asesoria || '';
+            document.getElementById('selectMateria').value = registro.codigo_materia || '';
+            document.getElementById('fechaHora').value = registro.fecha_hora ? new Date(registro.fecha_hora).toLocaleString('es-ES') : '';
+
+            const mensajeAlumno = document.getElementById('mensajeAlumno');
+            mensajeAlumno.textContent = 'Modificando registro seleccionado.';
+            mensajeAlumno.className = 'form-text text-primary fw-semibold';
+
+            modalAsesoriaInstance.show();
+        }
+
+        async function eliminarAsesoria(id) {
+            const confirmacion = await Swal.fire({
+                title: '¿Estás seguro?',
+                text: "Esta acción eliminará el registro de asesoría de forma permanente.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
             });
+
+            if (confirmacion.isConfirmed) {
+                try {
+                    const res = await fetch(`/api/control_asesoria/${id}`, {
+                        method: 'DELETE'
+                    });
+
+                    const result = await res.json();
+
+                    if (result.success) {
+                        Swal.fire('¡Eliminado!', 'El registro ha sido eliminado correctamente.', 'success');
+                        await cargarControlAsesorias();
+                    } else {
+                        Swal.fire('Error', result.message || 'No se pudo eliminar el registro en el servidor.', 'error');
+                    }
+                } catch (error) {
+                    console.error("Error al eliminar asesoría:", error);
+                    Swal.fire('Error de Conexión', 'No se pudo conectar con el servidor para eliminar el registro.', 'error');
+                }
+            }
+        }
+
+        function cerrarSesion() {
+            window.location.href = '/';
         }
     </script>
 </body>
 
-</html>```
+</html>
