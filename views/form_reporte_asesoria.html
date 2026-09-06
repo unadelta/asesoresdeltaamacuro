@@ -16,8 +16,8 @@
                 <h5 class="mb-0">Reporte de Asesorías</h5>
             </div>
             <div class="card-body">
-                <!-- Apunta a /reporte/asesorias para llamar a Puppeteer -->
-                <form action="/reporte/asesorias" method="GET" target="_blank">
+                <!-- Se elimina target="_blank" para garantizar el envío de cookies de sesión -->
+                <form action="/reporte/asesorias" method="GET">
                     <div class="mb-3">
                         <label for="fecha_inicio" class="form-label">Fecha Inicio:</label>
                         <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" required>
