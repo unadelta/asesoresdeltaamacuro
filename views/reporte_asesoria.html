@@ -3,215 +3,170 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Reporte de Asesorías - UNA</title>
+    <title>Reporte de Asesorías</title>
     <style>
-        @page {
-            size: letter;
-            margin: 15mm 15mm 20mm 15mm;
-        }
-        
-        *,
-        *::before,
-        *::after {
+        * {
             box-sizing: border-box;
         }
         
         body {
-            font-family: Arial, sans-serif;
+            font-family: Arial, Helvetica, sans-serif;
             margin: 0;
             padding: 0;
-            color: #222;
-            font-size: 10pt;
+            color: #1a1a1a;
+            font-size: 11px;
         }
         
-        .header-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 10px;
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid #003366;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
         }
         
-        .header-table td {
-            vertical-align: middle;
-            border: none;
-            padding: 0;
+        .logo-container {
+            width: 30%;
         }
         
-        .logo-cell {
-            width: 100px;
-        }
-        
-        .logo-cell img {
-            max-width: 90px;
+        .logo {
+            max-width: 140px;
             height: auto;
+            display: block;
         }
         
-        .institution-info {
+        .title-container {
+            width: 70%;
             text-align: right;
         }
         
-        .institution-title {
-            font-size: 13pt;
-            font-weight: bold;
+        h1 {
+            font-size: 15px;
+            margin: 0 0 5px 0;
             color: #003366;
-            margin: 0;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
-        .sub-institution {
-            font-size: 11pt;
-            font-weight: bold;
-            color: #444;
-            margin-top: 3px;
+        p {
+            margin: 2px 0;
         }
         
-        .divider {
-            height: 2px;
-            background-color: #003366;
-            margin: 10px 0 15px 0;
-        }
-        
-        .report-title-box {
-            text-align: center;
-            background-color: #f0f4f8;
-            border: 1px solid #d0dbe5;
-            padding: 8px;
+        .meta-info {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
             border-radius: 4px;
-            margin-bottom: 20px;
+            padding: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
         }
         
-        .report-title {
-            font-size: 11pt;
-            font-weight: bold;
-            color: #003366;
-            margin: 0;
-            text-transform: uppercase;
+        .meta-col {
+            width: 48%;
         }
         
-        .report-period {
-            font-size: 9.5pt;
-            color: #333;
-            margin-top: 4px;
-        }
-        
-        .data-table {
+        table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 40px;
+            margin-top: 5px;
         }
         
-        .data-table th {
+        th,
+        td {
+            border: 1px solid #b0b0b0;
+            padding: 6px 8px;
+            text-align: left;
+            word-wrap: break-word;
+        }
+        
+        th {
             background-color: #003366;
             color: #ffffff;
+            font-size: 10px;
             font-weight: bold;
-            font-size: 9pt;
-            padding: 8px 5px;
-            border: 1px solid #002244;
+            text-transform: uppercase;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f2f5f8;
+        }
+        
+        .text-center {
             text-align: center;
         }
         
-        .data-table td {
-            padding: 7px 5px;
-            border: 1px solid #cccccc;
-            font-size: 8.5pt;
-        }
-        
-        .data-table tbody tr:nth-child(even) {
-            background-color: #f9fbfd;
-        }
-        
-        .signatures-container {
-            width: 100%;
-            margin-top: 60px;
-            page-break-inside: avoid;
-        }
-        
-        .signatures-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .signatures-table td {
-            width: 50%;
-            vertical-align: top;
+        .no-data {
             text-align: center;
-            border: none;
-            padding: 0 20px;
-        }
-        
-        .signature-line {
-            width: 80%;
-            margin: 0 auto 8px auto;
-            border-top: 1px solid #000000;
-        }
-        
-        .signee-name {
-            font-weight: bold;
-            font-size: 9.5pt;
-            color: #111;
-            margin: 0;
-        }
-        
-        .signee-title {
-            font-size: 8.5pt;
-            color: #555;
-            margin-top: 3px;
+            padding: 20px;
+            font-style: italic;
+            color: #6c757d;
         }
     </style>
 </head>
 
 <body>
 
-    <table class="header-table">
-        <tr>
-            <td class="logo-cell">
-                <img src="<%= logoPath %>" alt="Logo UNA">
-            </td>
-            <td class="institution-info">
-                <div class="institution-title">Universidad Nacional Abierta</div>
-                <div class="sub-institution">Centro Local Delta Amacuro</div>
-            </td>
-        </tr>
-    </table>
-
-    <div class="divider"></div>
-
-    <div class="report-title-box">
-        <div class="report-title">Reporte de Asesorías</div>
-        <div class="report-period">
-            <strong>Período:</strong> Desde
-            <%= fecha_inicio %> hasta
-                <%= fecha_fin %>
+    <!-- Encabezado con Logo y Título -->
+    <div class="header">
+        <div class="logo-container">
+            <% if (logoPath) { %>
+                <img src="<%= logoPath %>" alt="Logo Universidad" class="logo">
+                <% } %>
+        </div>
+        <div class="title-container">
+            <h1>Reporte de Control de Asesorías</h1>
+            <p><strong>Rango:</strong>
+                <%= fecha_inicio %> al
+                    <%= fecha_fin %>
+            </p>
         </div>
     </div>
 
-    <table class="data-table">
+    <!-- Información del Asesor -->
+    <div class="meta-info">
+        <div class="meta-col">
+            <p><strong>Asesor Académico:</strong>
+                <%= nombre_asesor %>
+            </p>
+        </div>
+        <div class="meta-col">
+            <p><strong>Cédula:</strong>
+                <%= cedula_asesor %>
+            </p>
+        </div>
+    </div>
+
+    <!-- Tabla de Registros -->
+    <table>
         <thead>
             <tr>
-                <th style="width: 12%;">Fecha</th>
-                <th style="width: 15%;">Cédula</th>
-                <th style="width: 28%;">Nombre</th>
-                <th style="width: 12%;">Cod. Carrera</th>
-                <th style="width: 13%;">Cod. Materia</th>
-                <th style="width: 20%;">Asesoría</th>
+                <th style="width: 12%;" class="text-center">Fecha</th>
+                <th style="width: 15%;" class="text-center">Cédula</th>
+                <th style="width: 33%;">Nombre del Alumno</th>
+                <th style="width: 12%;" class="text-center">Carrera</th>
+                <th style="width: 12%;" class="text-center">Materia</th>
+                <th style="width: 16%;">Tipo Asesoría</th>
             </tr>
         </thead>
         <tbody>
             <% if (asesorias && asesorias.length > 0) { %>
                 <% asesorias.forEach(function(item) { %>
                     <tr>
-                        <td style="text-align: center;">
+                        <td class="text-center">
                             <%= item.fecha %>
                         </td>
-                        <td>
+                        <td class="text-center">
                             <%= item.cedula %>
                         </td>
                         <td>
                             <%= item.nombre_alumno %>
                         </td>
-                        <td style="text-align: center;">
+                        <td class="text-center">
                             <%= item.codigo_carrera %>
                         </td>
-                        <td style="text-align: center;">
+                        <td class="text-center">
                             <%= item.codigo_materia %>
                         </td>
                         <td>
@@ -221,34 +176,13 @@
                     <% }); %>
                         <% } else { %>
                             <tr>
-                                <td colspan="6" style="text-align: center; padding: 15px;">
-                                    No se encontraron registros de asesorías en el período seleccionado.
+                                <td colspan="6" class="no-data">
+                                    No se encontraron asesorías registradas en el rango de fechas seleccionado.
                                 </td>
                             </tr>
                             <% } %>
         </tbody>
     </table>
-
-    <div class="signatures-container">
-        <table class="signatures-table">
-            <tr>
-                <td>
-                    <div class="signature-line"></div>
-                    <div class="signee-name">
-                        <%= nombre_asesor %>
-                    </div>
-                    <div class="signee-title">Asesor Académico<br>C.I.:
-                        <%= cedula_asesor %>
-                    </div>
-                </td>
-                <td>
-                    <div class="signature-line"></div>
-                    <div class="signee-name">Dra. Yovinza Salazar</div>
-                    <div class="signee-title">Jefa Unidad Académica</div>
-                </td>
-            </tr>
-        </table>
-    </div>
 
 </body>
 

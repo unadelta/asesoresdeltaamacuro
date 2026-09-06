@@ -2115,6 +2115,14 @@ app.get('/api/reporte_actividades', (req, res) => {
 
 
 // Asumiendo que 'db' es tu objeto de conexión/pool a MySQL en server.js
+// Ruta para servir o visualizar la plantilla web de asesorías
+app.get('/reporte-asesoria-vista', (req, res) => {
+    if (!req.session || !req.session.usuario) {
+        return res.redirect('back');
+    }
+    // El servidor busca el archivo y lo entrega
+    res.sendFile(path.join(__dirname, 'views', 'reporte_asesoria.html'));
+});
 
 // FUNCIÓN PARA PROCESAR EL HTML Y CONVERTIRLO A PDF
 async function generarPDFAsesorias(datosPlantilla) {
@@ -2123,15 +2131,14 @@ async function generarPDFAsesorias(datosPlantilla) {
     // Inyecta las variables en el HTML
     const htmlCompilado = await ejs.renderFile(rutaPlantilla, datosPlantilla);
 
-    // Inicia Puppeteer con flags para el contenedor de Railway
+
     const browser = await puppeteer.launch({
-        headless: 'new',
+        headless: true,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
-            '--single-process',
-            '--no-zygote'
+            '--disable-gpu'
         ]
     });
 
