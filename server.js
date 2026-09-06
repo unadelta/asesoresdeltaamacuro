@@ -47,25 +47,11 @@ db.getConnection((err, connection) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
-//app.use('/views', express.static(path.join(__dirname, 'views')));
 
-// Configuración de la Sesión
-/*
-app.use(session({
-    secret: 'clave_secreta_asesorias_una',
-    resave: true,
-    saveUninitialized: true,
-    cookie: {
-        secure: false,
-        httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000 // 1 día
-    }
-}));
-*/
 
-// Configuración de la Sesión
 
-// 1. Importar librerías
+
+
 
 
 // 2. Configurar opciones de almacenamiento en MySQL
