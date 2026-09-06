@@ -295,9 +295,7 @@
             if (alumnoEncontrado) {
                 document.getElementById('cedulaAlumno').value = alumnoEncontrado.cedula || '';
                 document.getElementById('nombreAlumno').value = alumnoEncontrado.nombre || '';
-
-                // CORRECCIÓN: Asignar únicamente el código corto de la carrera para evitar rebasar la BD
-                document.getElementById('codigoCarrera').value = alumnoEncontrado.codigo_carrera || alumnoEncontrado.cod_carrera || '';
+                document.getElementById('codigoCarrera').value = `${alumnoEncontrado.codigo_carrera || ''} - ${alumnoEncontrado.descripcion_carrera || ''}`;
 
                 mensajeDiv.textContent = '¡Alumno seleccionado correctamente!';
                 mensajeDiv.className = 'form-text text-success fw-semibold';
@@ -320,16 +318,10 @@
             const idRegistro = document.getElementById('asesoriaId').value;
             const isEditing = Boolean(idRegistro);
 
-            // CORRECCIÓN: Filtro de seguridad para limpiar el código de carrera antes de enviar la petición
-            let codCarreraLimpio = document.getElementById('codigoCarrera').value.trim();
-            if (codCarreraLimpio.includes(' - ')) {
-                codCarreraLimpio = codCarreraLimpio.split(' - ')[0];
-            }
-
             const data = {
                 cedula_alumno: document.getElementById('cedulaAlumno').value,
                 nombre_alumno: document.getElementById('nombreAlumno').value,
-                codigo_carrera: codCarreraLimpio,
+                codigo_carrera: document.getElementById('codigoCarrera').value,
                 tipo_asesoria: document.getElementById('selectTipoAsesoria').value,
                 codigo_materia: document.getElementById('selectMateria').value,
                 cedula_asesor: document.getElementById('cedulaAsesor').value,
