@@ -10,6 +10,17 @@ const fs = require('fs');
 const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
 
+const express = require('express');
+const mysql = require('mysql2');
+
+
+// --- AGREGAR ESTA LÍNEA AQUÍ ---
+app.set('trust proxy', 1); // Confiar en el proxy de Railway para HTTPS
+// -----------------------------
+
+const puppeteer = require('puppeteer');
+// ... rest of the code
+
 // Configuración del Pool de MySQL
 const connectionString = process.env.MYSQL_URL || process.env.MYSQLPRIVATE_URL || process.env.MYSQLPUBLIC_URL;
 
