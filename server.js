@@ -7,6 +7,10 @@ const ejs = require('ejs');
 const path = require('path');
 const fs = require('fs');
 const session = express.session ? require('express-session') : require('express-session'); // Mantenido según tu estructura
+const session = require('express-session');
+const MySQLStore = require('express-mysql-session')(session);
+
+
 // Configuración del Pool de MySQL
 const connectionString = process.env.MYSQL_URL || process.env.MYSQLPRIVATE_URL || process.env.MYSQLPUBLIC_URL;
 
@@ -47,6 +51,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/views', express.static(path.join(__dirname, 'views')));
 
 // Configuración de la Sesión
+/*
 app.use(session({
     secret: 'clave_secreta_asesorias_una',
     resave: true,
@@ -57,6 +62,50 @@ app.use(session({
         maxAge: 24 * 60 * 60 * 1000 // 1 día
     }
 }));
+*/
+
+// Configuración de la Sesión
+
+// 1. Importar librerías
+
+
+// 2. Configurar opciones de almacenamiento en MySQL
+const sessionStoreOptions = {
+    // Usamos la misma conexión a base de datos que ya creamos (db)
+    // IMPORTANTE: Tu conexión 'db' debe estar exportada y accesible aquí
+    connection: db,
+    // Intervalo de limpieza de sesiones expiradas (en ms). Por defecto 1 hora.
+    expiration: 1000 * 60 * 60 * 24, // 1 día de sesión
+    // Crear automáticamente la tabla 'sessions' si no existe
+    createDatabaseTable: true,
+    schema: {
+        tableName: 'sessions',
+        columnNames: {
+            session_id: 'session_id',
+            expires: 'expires',
+            data: 'data'
+        }
+    }
+};
+
+// 3. Crear el almacén de sesiones
+const sessionStore = new MySQLStore(sessionStoreOptions);
+
+// 4. Configurar el middleware de sesión de Express
+app.use(session({
+    key: 'session_cookie_id', // Nombre de la cookie
+    secret: process.env.SESSION_SECRET || 'una_clave_secreta_larga_y_aleatoria', // ¡USA UN SECRETO REAL EN PRODUCCIÓN!
+    store: sessionStore, // AQUÍ ESTÁ EL CAMBIO CLAVE: Usamos MySQL
+    resave: false, // No volver a guardar si no ha cambiado
+    saveUninitialized: false, // No guardar sesiones vacías
+    cookie: {
+        maxAge: 1000 * 60 * 60 * 24, // 1 día
+        secure: process.env.NODE_ENV === 'production', // True en producción (si usas HTTPS)
+        httpOnly: true // Previene acceso desde JS del cliente
+    }
+}));
+
+
 
 
 // ==========================================
