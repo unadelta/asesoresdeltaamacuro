@@ -1036,7 +1036,7 @@ app.get('/asesoria', (req, res) => {
 });
 
 
-
+/*
 app.get('/api/control_asesoria', (req, res) => {
     const query = 'SELECT * FROM control_asesoria ORDER BY id DESC';
     db.query(query, (err, results) => {
@@ -1047,6 +1047,38 @@ app.get('/api/control_asesoria', (req, res) => {
         res.json({ success: true, data: results });
     });
 });
+
+*/
+
+// ... alrededor de la línea 1024 de tu server.js ...
+app.get('/api/controlasesoria', (req, res) => {
+    if (!req.session || !req.session.usuario) {
+        return res.status(401).json({ success: false, message: 'No autorizado. Inicie sesión.' });
+    }
+
+    const cedulaAsesorSesion = req.session.usuario.cedula;
+    let { fecha_desde, fecha_hasta } = req.query;
+
+    // CORRECCIÓN: Se añade 'nombre_alumno AS nombre' a la consulta SQL
+    let query = 'SELECT id, cedula_alumno, nombre_alumno AS nombre, codigo_carrera, tipo_asesoria, codigo_materia, fecha_hora FROM control_asesoria WHERE cedula_asesor = ?';
+    let params = [cedulaAsesorSesion];
+
+    if (fecha_desde && fecha_hasta) {
+        query += ' AND DATE(fecha_hora) BETWEEN ? AND ?';
+        params.push(fecha_desde, fecha_hasta);
+    }
+
+    query += ' ORDER BY id ASC';
+
+    db.query(query, params, (err, results) => {
+        if (err) {
+            console.error('Error al obtener datos de control_asesoria:', err);
+            return res.status(500).json({ success: false, message: 'Error en el servidor al consultar control_asesoria' });
+        }
+        res.json({ success: true, data: results });
+    });
+});
+
 
 app.post('/api/control_asesoria', (req, res) => {
     const {
