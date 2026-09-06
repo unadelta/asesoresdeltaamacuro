@@ -11,10 +11,11 @@
     "license": "ISC",
     "description": "",
     "dependencies": {
+        "ejs": "^6.0.1",
         "express": "^5.2.1",
         "express-session": "^1.19.0",
         "jsonwebtoken": "^9.0.3",
-        "mysql2": "^3.23.2",
+        "mysql2": "^3.24.3",
         "n2words": "^5.1.2",
         "puppeteer": "^25.10.0"
     }

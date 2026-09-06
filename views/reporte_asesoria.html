@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte de Asesorías - UNA</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 15mm 15mm 20mm 15mm;
+        }
+        
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #222;
+            font-size: 10pt;
+        }
+        
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+        
+        .header-table td {
+            vertical-align: middle;
+            border: none;
+            padding: 0;
+        }
+        
+        .logo-cell {
+            width: 100px;
+        }
+        
+        .logo-cell img {
+            max-width: 90px;
+            height: auto;
+        }
+        
+        .institution-info {
+            text-align: right;
+        }
+        
+        .institution-title {
+            font-size: 13pt;
+            font-weight: bold;
+            color: #003366;
+            margin: 0;
+            text-transform: uppercase;
+        }
+        
+        .sub-institution {
+            font-size: 11pt;
+            font-weight: bold;
+            color: #444;
+            margin-top: 3px;
+        }
+        
+        .divider {
+            height: 2px;
+            background-color: #003366;
+            margin: 10px 0 15px 0;
+        }
+        
+        .report-title-box {
+            text-align: center;
+            background-color: #f0f4f8;
+            border: 1px solid #d0dbe5;
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        
+        .report-title {
+            font-size: 11pt;
+            font-weight: bold;
+            color: #003366;
+            margin: 0;
+            text-transform: uppercase;
+        }
+        
+        .report-period {
+            font-size: 9.5pt;
+            color: #333;
+            margin-top: 4px;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 40px;
+        }
+        
+        .data-table th {
+            background-color: #003366;
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 9pt;
+            padding: 8px 5px;
+            border: 1px solid #002244;
+            text-align: center;
+        }
+        
+        .data-table td {
+            padding: 7px 5px;
+            border: 1px solid #cccccc;
+            font-size: 8.5pt;
+        }
+        
+        .data-table tbody tr:nth-child(even) {
+            background-color: #f9fbfd;
+        }
+        
+        .signatures-container {
+            width: 100%;
+            margin-top: 60px;
+            page-break-inside: avoid;
+        }
+        
+        .signatures-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .signatures-table td {
+            width: 50%;
+            vertical-align: top;
+            text-align: center;
+            border: none;
+            padding: 0 20px;
+        }
+        
+        .signature-line {
+            width: 80%;
+            margin: 0 auto 8px auto;
+            border-top: 1px solid #000000;
+        }
+        
+        .signee-name {
+            font-weight: bold;
+            font-size: 9.5pt;
+            color: #111;
+            margin: 0;
+        }
+        
+        .signee-title {
+            font-size: 8.5pt;
+            color: #555;
+            margin-top: 3px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <table class="header-table">
+        <tr>
+            <td class="logo-cell">
+                <img src="<%= logoPath %>" alt="Logo UNA">
+            </td>
+            <td class="institution-info">
+                <div class="institution-title">Universidad Nacional Abierta</div>
+                <div class="sub-institution">Centro Local Delta Amacuro</div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="divider"></div>
+
+    <div class="report-title-box">
+        <div class="report-title">Reporte de Asesorías</div>
+        <div class="report-period">
+            <strong>Período:</strong> Desde
+            <%= fecha_inicio %> hasta
+                <%= fecha_fin %>
+        </div>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th style="width: 12%;">Fecha</th>
+                <th style="width: 15%;">Cédula</th>
+                <th style="width: 28%;">Nombre</th>
+                <th style="width: 12%;">Cod. Carrera</th>
+                <th style="width: 13%;">Cod. Materia</th>
+                <th style="width: 20%;">Asesoría</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% if (asesorias && asesorias.length > 0) { %>
+                <% asesorias.forEach(function(item) { %>
+                    <tr>
+                        <td style="text-align: center;">
+                            <%= item.fecha %>
+                        </td>
+                        <td>
+                            <%= item.cedula %>
+                        </td>
+                        <td>
+                            <%= item.nombre_alumno %>
+                        </td>
+                        <td style="text-align: center;">
+                            <%= item.codigo_carrera %>
+                        </td>
+                        <td style="text-align: center;">
+                            <%= item.codigo_materia %>
+                        </td>
+                        <td>
+                            <%= item.tipo_asesoria %>
+                        </td>
+                    </tr>
+                    <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="6" style="text-align: center; padding: 15px;">
+                                    No se encontraron registros de asesorías en el período seleccionado.
+                                </td>
+                            </tr>
+                            <% } %>
+        </tbody>
+    </table>
+
+    <div class="signatures-container">
+        <table class="signatures-table">
+            <tr>
+                <td>
+                    <div class="signature-line"></div>
+                    <div class="signee-name">
+                        <%= nombre_asesor %>
+                    </div>
+                    <div class="signee-title">Asesor Académico<br>C.I.:
+                        <%= cedula_asesor %>
+                    </div>
+                </td>
+                <td>
+                    <div class="signature-line"></div>
+                    <div class="signee-name">Dra. Yovinza Salazar</div>
+                    <div class="signee-title">Jefa Unidad Académica</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+</body>
+
+</html>

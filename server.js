@@ -2,6 +2,11 @@ const express = require('express');
 const mysql = require('mysql2');
 const app = express();
 
+const puppeteer = require('puppeteer');
+const ejs = require('ejs');
+const path = require('path');
+const fs = require('fs');
+
 // Configuración del Pool de MySQL
 const connectionString = process.env.MYSQL_URL || process.env.MYSQLPRIVATE_URL || process.env.MYSQLPUBLIC_URL;
 
@@ -2107,6 +2112,114 @@ app.get('/api/reporte_actividades', (req, res) => {
         });
     });
 });
+
+
+// Asumiendo que 'db' es tu objeto de conexión/pool a MySQL en server.js
+
+// FUNCIÓN PARA PROCESAR EL HTML Y CONVERTIRLO A PDF
+async function generarPDFAsesorias(datosPlantilla) {
+    const rutaPlantilla = path.join(__dirname, 'views', 'reporte_asesoria.html');
+
+    // Inyecta las variables en el HTML
+    const htmlCompilado = await ejs.renderFile(rutaPlantilla, datosPlantilla);
+
+    // Inicia Puppeteer con flags para el contenedor de Railway
+    const browser = await puppeteer.launch({
+        headless: 'new',
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--single-process',
+            '--no-zygote'
+        ]
+    });
+
+    const page = await browser.newPage();
+    await page.setContent(htmlCompilado, { waitUntil: 'networkidle0' });
+
+    // Crea el PDF en memoria
+    const pdfBuffer = await page.pdf({
+        format: 'Letter',
+        printBackground: true,
+        displayHeaderFooter: true,
+        footerTemplate: `
+            <div style="font-size: 8px; width: 100%; text-align: right; padding-right: 15mm; color: #555; font-family: Arial, sans-serif;">
+                Página <span class="pageNumber"></span> de <span class="totalPages"></span>
+            </div>
+        `,
+        headerTemplate: '<div></div>',
+        margin: { top: '15mm', right: '15mm', bottom: '20mm', left: '15mm' }
+    });
+
+    await browser.close();
+    return pdfBuffer;
+}
+
+// RUTA ACCESIBLE DESDE EL MENÚ
+app.get('/reporte/asesorias', async(req, res) => {
+    try {
+        if (!req.session || !req.session.cedula_asesor) {
+            return res.status(401).send('Sesión no válida.');
+        }
+
+        const { fecha_inicio, fecha_fin } = req.query;
+
+        if (!fecha_inicio || !fecha_fin) {
+            return res.status(400).send('Debe seleccionar el rango de fechas.');
+        }
+
+        const cedulaAsesor = req.session.cedula_asesor;
+        const nombreAsesor = req.session.nombre_asesor || 'Asesor Académico';
+
+        // Consulta filtrada en MySQL
+        const query = `
+            SELECT 
+                DATE_FORMAT(fecha, '%d/%m/%Y') AS fecha,
+                cedula,
+                nombre_alumno,
+                codigo_carrera,
+                codigo_materia,
+                tipo_asesoria
+            FROM control_asesoria
+            WHERE cedula_asesor = ? 
+              AND fecha BETWEEN ? AND ?
+            ORDER BY fecha ASC
+        `;
+
+        const [filas] = await db.execute(query, [cedulaAsesor, fecha_inicio, fecha_fin]);
+
+        // Convertir imagen a Base64 para garantizar que cargue en Railway
+        const rutaLogo = path.join(__dirname, 'public', 'jpg', 'logouna.jpg');
+        let logoBase64 = '';
+        if (fs.existsSync(rutaLogo)) {
+            const bitmap = fs.readFileSync(rutaLogo);
+            logoBase64 = `data:image/jpeg;base64,${bitmap.toString('base64')}`;
+        }
+
+        // Generar Buffer del PDF enviando la data a la plantilla
+        const pdfBuffer = await generarPDFAsesorias({
+            logoPath: logoBase64,
+            fecha_inicio: new Date(fecha_inicio + 'T00:00:00').toLocaleDateString('es-VE'),
+            fecha_fin: new Date(fecha_fin + 'T00:00:00').toLocaleDateString('es-VE'),
+            asesorias: filas,
+            nombre_asesor: nombreAsesor,
+            cedula_asesor: cedulaAsesor
+        });
+
+        // Retornar archivo al usuario
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename=Reporte_Asesorias_${cedulaAsesor}.pdf`);
+        res.send(pdfBuffer);
+
+    } catch (error) {
+        console.error('Error al generar el PDF:', error);
+        res.status(500).send('Error interno generando el reporte.');
+    }
+});
+
+
+//final reporte_asesoria.html
 
 // Asegurar que la variable PORT esté declarada antes del listen
 const PORT = process.env.PORT || 3000;
