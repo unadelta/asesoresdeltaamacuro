@@ -56,7 +56,7 @@ db.getConnection((err, connection) => {
 // Configuración de Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'views')));
 
 
 
@@ -106,20 +106,13 @@ app.use(session({
 // ==========================================
 // RUTAS Y ENDPOINTS DE AUTENTICACIÓN
 // ==========================================
-/*
+
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'login.html'));
 });
-*/
 
-// ==========================================
-// RUTA RAÍZ (Mensaje de prueba simple)
-// ==========================================
 
-app.get('/', (req, res) => {
-    // ESTA ES LA INSTRUCCIÓN DE PRUEBA:
-    res.send('¡El servidor de Asesores Delta Amacuro está en ejecución. Error 404 solucionado!');
-});
+
 // ==========================================
 // RUTA RAÍZ (Enviar página de inicio)
 // ==========================================
