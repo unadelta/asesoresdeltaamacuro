@@ -111,6 +111,12 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'login.html'));
 });
 
+// ==========================================
+// RUTA RAÍZ (Enviar página de inicio)
+// ==========================================
+
+
+
 app.post('/api/login', (req, res) => {
     const { usuario, clave } = req.body;
     const sql = 'SELECT * FROM asesor WHERE usuario = ? AND clave = ?';
