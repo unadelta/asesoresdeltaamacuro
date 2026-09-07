@@ -1,24 +1,14 @@
 //const express = require('express');
 const mysql = require('mysql2');
 const app = express();
-
 const puppeteer = require('puppeteer');
 const ejs = require('ejs');
 const path = require('path');
 const fs = require('fs');
-
 const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
-
-
-
-
-// --- AGREGAR ESTA LÍNEA AQUÍ ---
-app.set('trust proxy', 1); // Confiar en el proxy de Railway para HTTPS
-// -----------------------------
-
-
-
+const puppeteer = require('puppeteer');
+// Configuración del Pool de MySQL
 const connectionString = process.env.MYSQL_URL || process.env.MYSQLPRIVATE_URL || process.env.MYSQLPUBLIC_URL;
 
 const db = connectionString ?
@@ -33,8 +23,6 @@ const db = connectionString ?
         connectionLimit: 10,
         queueLimit: 0
     });
-
-
 
 
 // Verificar la conexión al Pool sin tumbar el servidor si falla
